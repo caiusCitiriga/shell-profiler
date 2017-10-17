@@ -1,4 +1,4 @@
 export class AcceptedOption {
     option: string;
-    mustHaveValue: boolean;
+    mustHaveValue?: boolean;
 }

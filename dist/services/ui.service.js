@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 require("rxjs/add/observable/of");
-const Subject_1 = require("rxjs/Subject");
+const BehaviorSubject_1 = require("rxjs/BehaviorSubject");
 const chalk = require("chalk");
 const process = require("process");
 class UI {
@@ -43,7 +43,7 @@ class UI {
         console.log(chalk.yellow(`WARN: ${string}`));
     }
     static error(string) {
-        console.log(chalk.bgRed.white(`\n ERROR: ${string} `));
+        console.log(chalk.red(`ERROR: ${string} \n`));
     }
     static printTableExperimental(maxLen, currLen) {
         let spaces = '';
@@ -53,5 +53,5 @@ class UI {
         return spaces;
     }
 }
-UI._$userInput = new Subject_1.Subject();
+UI._$userInput = new BehaviorSubject_1.BehaviorSubject(null);
 exports.UI = UI;

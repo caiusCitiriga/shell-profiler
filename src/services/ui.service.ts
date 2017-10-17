@@ -1,13 +1,13 @@
 import "rxjs/add/observable/of";
-import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 
 import * as chalk from 'chalk';
 import * as process from 'process';
 import * as readline from 'readline';
 
 export class UI {
-    private static _$userInput: Subject<string | null> = new Subject();
+    private static _$userInput: BehaviorSubject<string | null> = new BehaviorSubject(null);
 
     public static get $userInput(): Observable<string | null> {
         return UI._$userInput.asObservable();
@@ -58,7 +58,7 @@ export class UI {
     }
 
     public static error(string: string) {
-        console.log(chalk.bgRed.white(`\n ERROR: ${string} `));
+        console.log(chalk.red(`ERROR: ${string} \n`));
     }
 
     public static printTableExperimental(maxLen: number, currLen: number) {

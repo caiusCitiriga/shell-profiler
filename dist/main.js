@@ -1,9 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+require("rxjs/add/operator/filter");
 const chalk = require("chalk");
 const proc = require("process");
 const system_service_1 = require("./services/system.service");
 const github_service_1 = require("./services/github.service");
+const ui_service_1 = require("./services/ui.service");
+const DispatcherReturnSet_entity_1 = require("./entities/DispatcherReturnSet.entity");
+const UniqueID_service_1 = require("./services/UniqueID.service");
 class ShellProfiler {
     constructor() {
         this.sys = new system_service_1.System();
@@ -17,83 +21,100 @@ class ShellProfiler {
             this.dispatch();
             return;
         }
+        ui_service_1.UI.print('Here\'s a list of all available commands and their usage or options');
         this.sys.help();
     }
     dispatch() {
+        let acceptedOptions;
+        let extractionResult;
         switch (this.args[0]) {
+            case 'tkn':
+                const github = new github_service_1.GitHubService();
+                let tkn = "";
+                github.token.split('-').forEach(char => tkn += char);
+                ui_service_1.UI.print(tkn);
+                break;
             case 'set':
-                if (!this.checkArgsPresence([1])) {
+                if (!this.checkExtraOptionsPresence([1])) {
                     return;
                 }
-                const acceptedOptions = [
-                    { option: '--token', mustHaveValue: true },
-                    { option: '--username', mustHaveValue: false }
-                ];
-                const extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
-                if (!extractionResult.length) {
-                    return;
+                acceptedOptions = [{ option: '--token', mustHaveValue: true }, { option: '--username', mustHaveValue: true }];
+                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+                if (extractionResult.option.indexOf('--token') !== -1 && extractionResult.value) {
+                    this.sys.setGithubToken(extractionResult.value);
+                    ui_service_1.UI.success(`GitHub access token successfully set to "${extractionResult.value}"`);
                 }
-                if (extractionResult.find(option => option.option === '--token')) {
-                    console.log('Working on token');
-                }
-                if (extractionResult.find(option => option.option === '--username')) {
-                    console.log('Working on username');
+                if (extractionResult.option.indexOf('--username') !== -1 && extractionResult.value) {
+                    this.sys.setGithubUsername(extractionResult.value);
+                    ui_service_1.UI.success(`Username successfully set to "${extractionResult.value}"`);
                 }
                 break;
             case 'new':
-                console.log(!!this.checkArgsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
+                acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
+                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+                if (extractionResult.option === '--alias') {
+                    ui_service_1.UI.askUserInput(chalk.green('Alias name: '), (alias) => {
+                        ui_service_1.UI.askUserInput(chalk.green('Alias body: '), (data) => {
+                            const aliasName = alias;
+                            const aliasBody = data;
+                            this.sys.upsertAlias({ id: UniqueID_service_1.UniqueIdUtility.generateId(), name: aliasName, command: aliasBody });
+                        });
+                    });
+                }
+                if (extractionResult.option === '--func') {
+                    ui_service_1.UI.askUserInput(chalk.green('Function name: '), (func) => {
+                        ui_service_1.UI.askUserInput(chalk.green('Function body: '), (data) => {
+                            const funcName = func;
+                            const funcBody = `function ${funcName}(){${data}}`;
+                            this.sys.upsertFunc({ id: UniqueID_service_1.UniqueIdUtility.generateId(), name: funcName, command: funcBody });
+                        });
+                    });
+                }
                 break;
             case 'delete':
-                console.log(!!this.checkArgsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
+                ui_service_1.UI.print(!!this.checkExtraOptionsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
                 break;
             case 'edit':
-                console.log(!!this.checkArgsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
+                ui_service_1.UI.print(!!this.checkExtraOptionsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
                 break;
             default:
                 //  Look for an available alias or function    
+                ui_service_1.UI.warn('No command exists with that name');
                 break;
         }
     }
-    checkArgsPresence(howMany, warnInConsole = true) {
+    checkExtraOptionsPresence(howMany, warnInConsole = true) {
         let allArgsPresent = true;
         howMany.forEach(index => {
             allArgsPresent = !!this.args[index];
         });
         if (!allArgsPresent && warnInConsole) {
-            console.log(chalk.red('Command is missing a/some option/s. Check the correct syntax'));
+            ui_service_1.UI.error('Command is missing a/some option/s. Check the correct syntax');
         }
         return allArgsPresent;
     }
     extractOptionsAndValues(argToWorkOn, acceptedOptions, warnInConsole = true) {
-        let noMatches = true;
-        const arg = this.args[argToWorkOn];
-        const returnedSet = [];
-        acceptedOptions.forEach(acceptedOption => {
-            if (acceptedOption.mustHaveValue) {
-                const passedOption = arg.split(':')[0];
-                const value = arg.split(':')[1];
-                if (value && value.length && passedOption === acceptedOption.option) {
-                    console.log('Found a matching option with value needed');
-                    console.log('Option: ' + passedOption);
-                    console.log('Value: ' + value);
-                    returnedSet.push({ option: passedOption, value: value });
-                    noMatches = false;
-                }
+        const mainArg = this.args[argToWorkOn];
+        const returnSet = new DispatcherReturnSet_entity_1.DispatcherReturnSet();
+        let matchingOption = acceptedOptions.find(opt => mainArg.indexOf(opt.option) !== -1 ? true : false);
+        if (!matchingOption && warnInConsole) {
+            ui_service_1.UI.error('No matching options found for the given command');
+            return returnSet;
+        }
+        if (matchingOption && matchingOption.mustHaveValue) {
+            const mainArgValue = mainArg.split(':')[1];
+            if (!mainArgValue) {
+                ui_service_1.UI.error('This command expects a value. Run the command again with its value');
             }
             else {
-                if (arg === acceptedOption.option) {
-                    console.log('Found a matching option without a value needed');
-                    console.log('Option: ' + arg);
-                    returnedSet.push({ option: arg });
-                    noMatches = false;
-                }
+                returnSet.option = mainArg;
+                returnSet.value = mainArgValue;
             }
-        });
-        if (noMatches && warnInConsole) {
-            console.log(chalk.red('No matches found for the given command. Check your syntax and any required values'));
-            return [];
         }
-        return returnedSet;
+        if (matchingOption && !matchingOption.mustHaveValue) {
+            returnSet.option = matchingOption.option;
+        }
+        return returnSet;
     }
 }
 exports.ShellProfiler = ShellProfiler;

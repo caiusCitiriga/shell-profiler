@@ -19,12 +19,69 @@ class System {
     }
     setGithubUsername(username) {
         if (!this.checkProfilerDataIntegrity()) {
-            ui_service_1.UI.warn('Initializing ShellProfiler...');
             this.initializeCoreFiles();
         }
         proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDir);
         const auth = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerAuthFile, { encoding: 'UTF-8' }));
         auth.githubUsername = username;
+        this.updateAuthFile(auth);
+    }
+    upsertAlias(alias) {
+        let updated = false;
+        if (!this.checkProfilerDataIntegrity()) {
+            this.initializeCoreFiles();
+        }
+        proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDir);
+        const profilerData = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
+        if (!!profilerData && !profilerData.aliases) {
+            profilerData.aliases = [];
+        }
+        if (!!profilerData.aliases.find(a => a.name === alias.name.trim().toLowerCase())) {
+            profilerData.aliases.forEach((a, i) => {
+                if (a.name === alias.name.toLowerCase().trim()) {
+                    profilerData.aliases[i].command = alias.command;
+                    updated = true;
+                }
+            });
+        }
+        else {
+            profilerData.aliases.push(alias);
+        }
+        ui_service_1.UI.success(updated ? 'Alias updated successfully!' : 'Alias added successfully!');
+        this.updateDataFile(profilerData);
+    }
+    upsertFunc(func) {
+        let updated = false;
+        if (!this.checkProfilerDataIntegrity()) {
+            this.initializeCoreFiles();
+        }
+        proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDir);
+        const profilerData = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
+        if (!!profilerData && !profilerData.functions) {
+            profilerData.functions = [];
+        }
+        if (!!profilerData.functions.find(f => f.name === func.name.trim().toLowerCase())) {
+            profilerData.functions.forEach((f, i) => {
+                if (f.name === func.name.toLowerCase().trim()) {
+                    profilerData.functions[i].command = func.command;
+                    updated = true;
+                }
+            });
+        }
+        else {
+            profilerData.functions.push(func);
+        }
+        this.updateDataFile(profilerData);
+        ui_service_1.UI.success(updated ? 'Function updated successfully!' : 'Function added successfully!');
+        console.log(profilerData);
+    }
+    setGithubToken(token) {
+        if (!this.checkProfilerDataIntegrity()) {
+            this.initializeCoreFiles();
+        }
+        proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDir);
+        const auth = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerAuthFile, { encoding: 'UTF-8' }));
+        auth.githubToken = token;
         this.updateAuthFile(auth);
     }
     checkProfilerDataIntegrity() {
@@ -42,6 +99,7 @@ class System {
         return true;
     }
     initializeCoreFiles() {
+        ui_service_1.UI.warn('Initializing ShellProfiler...');
         proc.chdir(os.homedir());
         const auth = new ProfilerAtuh_entity_1.ProfilerAuth();
         const profile = new ProfilerData_entity_1.ProfilerData();
@@ -56,6 +114,9 @@ class System {
     }
     updateAuthFile(authFile) {
         fs.writeFileSync(os.homedir + path.sep + general_configs_1.GENERAL.profilerDataDir + path.sep + general_configs_1.GENERAL.profilerAuthFile, JSON.stringify(authFile), { encoding: 'UTF-8' });
+    }
+    updateDataFile(dataFile) {
+        fs.writeFileSync(os.homedir + path.sep + general_configs_1.GENERAL.profilerDataDir + path.sep + general_configs_1.GENERAL.profilerDataFile, JSON.stringify(dataFile), { encoding: 'UTF-8' });
     }
 }
 exports.System = System;

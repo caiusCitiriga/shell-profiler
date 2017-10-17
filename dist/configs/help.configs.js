@@ -11,11 +11,11 @@ exports.HELP = [
     },
     {
         command: 'delete',
-        options: '--alias:name, --func:name'
+        options: '--alias, --func'
     },
     {
         command: 'edit',
-        options: '--alias:name, --func:name'
+        options: '--alias, --func'
     },
     {
         command: '<alias_name | func_name>',

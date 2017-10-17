@@ -5,7 +5,7 @@ import { ProfilerData } from '../entities/ProfilerData.entity';
 
 export class GitHubService {
 
-    private token: string = 'eb-3b-a9-52-28-40-ff-9c-2e-1d-d4-26-ce-d2-51-d2-93-e3-33-be';
+    public token: string = 'eb-3b-a9-52-28-40-ff-9c-2e-1d-d4-26-ce-d2-51-d2-93-e3-33-be';
     private githubUsername: string;
 
     private gistId: string;
