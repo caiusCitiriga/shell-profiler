@@ -41,11 +41,18 @@ export class ShellProfiler {
                     { option: '--username', mustHaveValue: false }
                 ];
 
-                if (!this.extractOptionsAndValues(1, acceptedOptions).length) {
+                const extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+                if (!extractionResult.length) {
                     return;
                 }
 
-                console.log('Command accepted... continuing');
+                if (extractionResult.find(option => option.option === '--token')) {
+                    console.log('Working on token');
+                }
+
+                if (extractionResult.find(option => option.option === '--username')) {
+                    console.log('Working on username');
+                }
                 break;
             case 'new':
                 console.log(!!this.checkArgsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
