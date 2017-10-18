@@ -169,9 +169,18 @@ export class SystemService {
 
     public deleteItem(type: ItemType, id: string) {
         if (type === ItemType.alias) {
+            const profilerData = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
+            profilerData.aliases = profilerData.aliases.filter(a => a.id !== id);
 
+            PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
         }
-        if (type === ItemType.function) { }
+
+        if (type === ItemType.function) {
+            const profilerData = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
+            profilerData.functions = profilerData.functions.filter(f => f.id !== id);
+
+            PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
+        }
         if (type === ItemType.export) { }
     }
 

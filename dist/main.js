@@ -9,6 +9,9 @@ const ui_service_1 = require("./services/ui.service");
 const system_service_1 = require("./services/system.service");
 const github_service_1 = require("./services/github.service");
 const UniqueID_service_1 = require("./services/UniqueID.service");
+const persisance_service_1 = require("./services/persisance.service");
+const persistance_item_type_enum_1 = require("./enums/persistance-item-type.enum");
+const item_type_enum_1 = require("./enums/item-type.enum");
 class ShellProfiler {
     constructor() {
         this.sys = new system_service_1.SystemService();
@@ -89,7 +92,42 @@ class ShellProfiler {
                 }
                 break;
             case 'delete':
-                ui_service_1.UI.print(!!this.checkExtraOptionsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
+                if (!this.checkExtraOptionsPresence([1])) {
+                    return;
+                }
+                acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
+                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+                if (!extractionResult) {
+                    return;
+                }
+                if (extractionResult.option.indexOf('--alias') !== -1) {
+                    const aliases = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).aliases;
+                    const indexedIds = [];
+                    aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
+                    ui_service_1.UI.printKeyValuePairs(indexedIds);
+                    ui_service_1.UI.askUserInput('Type the number of the alias to delete: ', index => {
+                        if (!aliases[index]) {
+                            ui_service_1.UI.error('You must provide a valid number');
+                            this.dispatch();
+                            return;
+                        }
+                        this.sys.deleteItem(item_type_enum_1.ItemType.alias, aliases[index].id);
+                    });
+                }
+                if (extractionResult.option.indexOf('--func') !== -1) {
+                    const functions = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).functions;
+                    const indexedIds = [];
+                    functions.forEach((f, i) => indexedIds.push({ key: `${i}) ${f.name}`, value: f.desc }));
+                    ui_service_1.UI.printKeyValuePairs(indexedIds);
+                    ui_service_1.UI.askUserInput('Type the number of the function to delete: ', index => {
+                        if (!functions[index]) {
+                            ui_service_1.UI.error('You must provide a valid number');
+                            this.dispatch();
+                            return;
+                        }
+                        this.sys.deleteItem(item_type_enum_1.ItemType.function, functions[index].id);
+                    });
+                }
                 break;
             case 'help':
                 this.sys.help();

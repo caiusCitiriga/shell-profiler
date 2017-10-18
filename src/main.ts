@@ -14,6 +14,10 @@ import { UI } from './services/ui.service';
 import { SystemService } from './services/system.service';
 import { GitHubService } from './services/github.service';
 import { UniqueIdUtility } from './services/UniqueID.service';
+import { PersistanceService } from './services/persisance.service';
+import { ProfilerData } from './entities/ProfilerData.entity';
+import { PersistanceItemType } from './enums/persistance-item-type.enum';
+import { ItemType } from './enums/item-type.enum';
 
 export class ShellProfiler {
     private args: string[];
@@ -113,7 +117,48 @@ export class ShellProfiler {
                 break;
 
             case 'delete':
-                UI.print(!!this.checkExtraOptionsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
+                if (!this.checkExtraOptionsPresence([1])) {
+                    return;
+                }
+
+                acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
+
+                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+                if (!extractionResult) {
+                    return;
+                }
+                if (extractionResult.option.indexOf('--alias') !== -1) {
+                    const aliases = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData)).aliases;
+                    const indexedIds: { key: string, value: string }[] = [];
+
+                    aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
+                    UI.printKeyValuePairs(indexedIds);
+                    UI.askUserInput('Type the number of the alias to delete: ', index => {
+                        if (!aliases[index]) {
+                            UI.error('You must provide a valid number');
+                            this.dispatch();
+                            return;
+                        }
+
+                        this.sys.deleteItem(ItemType.alias, aliases[index].id);
+                    });
+                }
+                if (extractionResult.option.indexOf('--func') !== -1) {
+                    const functions = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData)).functions;
+                    const indexedIds: { key: string, value: string }[] = [];
+
+                    functions.forEach((f, i) => indexedIds.push({ key: `${i}) ${f.name}`, value: f.desc }));
+                    UI.printKeyValuePairs(indexedIds);
+                    UI.askUserInput('Type the number of the function to delete: ', index => {
+                        if (!functions[index]) {
+                            UI.error('You must provide a valid number');
+                            this.dispatch();
+                            return;
+                        }
+
+                        this.sys.deleteItem(ItemType.function, functions[index].id);
+                    });
+                }
                 break;
 
             case 'help':

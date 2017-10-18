@@ -136,8 +136,15 @@ class SystemService {
     }
     deleteItem(type, id) {
         if (type === item_type_enum_1.ItemType.alias) {
+            const profilerData = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
+            profilerData.aliases = profilerData.aliases.filter(a => a.id !== id);
+            persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profilerData);
         }
-        if (type === item_type_enum_1.ItemType.function) { }
+        if (type === item_type_enum_1.ItemType.function) {
+            const profilerData = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
+            profilerData.functions = profilerData.functions.filter(f => f.id !== id);
+            persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profilerData);
+        }
         if (type === item_type_enum_1.ItemType.export) { }
     }
     checkProfilerDataIntegrity() {
