@@ -31,3 +31,4 @@ exports.HELP = [
         options: `Deletes an alias or a function.\n${chalk.magenta('Options: [--alias, --func]')}\n`
     }
 ];
+//# sourceMappingURL=help.configs.js.map

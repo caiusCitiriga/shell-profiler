@@ -41,7 +41,7 @@ class SystemService {
         this.setGithubUsername(username);
         this.setUserBashrcFilePath(usrBashrcPath);
         //  Set the sourcing of the shell_profiler bashrc on the main bashrc file 
-        let userBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
+        let usrBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
         let source_path = '';
         if (os.platform() === 'win32') {
             console.log(chalk.yellow('Converting path to UNIX-like for sourcing.'));
@@ -51,7 +51,8 @@ class SystemService {
         else {
             source_path = os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerBashFile;
         }
-        userBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${source_path}`;
+        usrBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${source_path}`;
+        fs.writeFileSync(usrBashrcPath, usrBashrcFile, { encoding: 'UTF-8' });
         ui_service_1.UI.success('ShellProfiler has been successfully initialized!');
     }
     setGithubToken(token) {
@@ -182,3 +183,4 @@ class SystemService {
     }
 }
 exports.SystemService = SystemService;
+//# sourceMappingURL=system.service.js.map

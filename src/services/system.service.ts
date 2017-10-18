@@ -52,7 +52,7 @@ export class SystemService {
         this.setUserBashrcFilePath(usrBashrcPath);
 
         //  Set the sourcing of the shell_profiler bashrc on the main bashrc file 
-        let userBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
+        let usrBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
         let source_path = '';
 
         if (os.platform() === 'win32') {
@@ -64,7 +64,8 @@ export class SystemService {
             source_path = os.homedir() + path.sep + GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashFile;
         }
 
-        userBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${source_path}`;
+        usrBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${source_path}`;
+        fs.writeFileSync(usrBashrcPath, usrBashrcFile, { encoding: 'UTF-8' });
 
         UI.success('ShellProfiler has been successfully initialized!');
     }

@@ -12,3 +12,4 @@ exports.GENERAL = {
     profilerDataFile: 'shell_profiler.data.json',
     profilerAuthFile: 'shell_profiler.auth.json',
 };
+//# sourceMappingURL=general.configs.js.map

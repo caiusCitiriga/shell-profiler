@@ -173,3 +173,4 @@ class ShellProfiler {
 exports.ShellProfiler = ShellProfiler;
 const SP = new ShellProfiler();
 SP.start();
+//# sourceMappingURL=main.js.map

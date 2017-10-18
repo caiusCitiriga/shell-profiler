@@ -1,4 +1,5 @@
 # ShellProfiler [SP]
+## (Still a work in progress. Not production ready)
 ### Say goodbye to your old and ugly ***.bashrc*** file!
 Ever found yourself creating an amazing ***.bashrc*** file full of aliases, functions and exports on your machine? And suddently when switching to another bash capable machine, all those aliases, functions and exports aren't available unless you copy that file on the new machine, of course. How frustrating is it?
 
@@ -16,7 +17,7 @@ sp init
 # To see a full list of commands, just run sp
 sp
 ```
-This will start a procedure that will ask you 3 informations:
+The ```sp init``` command will start a procedure that will ask you 3 informations:
 + **Your GitHub authorization token** (needed to manage the gist), if you don't have one just go on GitHub, on the authorization tokens page and create a new token with the Gists scope only. Copy the token and give it to **SP**
 
 + **Your GitHub username**
