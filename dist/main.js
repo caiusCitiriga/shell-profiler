@@ -51,6 +51,9 @@ class ShellProfiler {
                 }
                 acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+                if (!extractionResult) {
+                    return;
+                }
                 if (extractionResult.option.indexOf('--alias') !== -1) {
                     this.handleAliasListCall();
                 }
@@ -69,6 +72,9 @@ class ShellProfiler {
                     { option: '--username', mustHaveValue: true }
                 ];
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+                if (!extractionResult) {
+                    return;
+                }
                 if (extractionResult.option.indexOf('--token') !== -1 && extractionResult.value) {
                     this.handleTokenSetCall(extractionResult.value);
                 }
@@ -177,12 +183,13 @@ class ShellProfiler {
         let matchingOption = acceptedOptions.find(opt => mainArg.indexOf(opt.option) !== -1 ? true : false);
         if (!matchingOption && warnInConsole) {
             ui_service_1.UI.error('No matching options found for the given command');
-            return returnSet;
+            return null;
         }
         if (matchingOption && matchingOption.mustHaveValue) {
             const mainArgValue = mainArg.split(':')[1];
             if (!mainArgValue) {
                 ui_service_1.UI.error('This command expects a value. Run the command again with its value');
+                return null;
             }
             else {
                 returnSet.option = mainArg;

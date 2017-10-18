@@ -5,26 +5,30 @@ import * as chalk from 'chalk';
 import * as process from 'process';
 import * as child_process from 'child_process';
 
-import { UI } from './ui.service';
 import { HELP } from '../configs/help.configs';
 import { GENERAL } from '../configs/general.configs';
+
+import { ItemType } from '../enums/item-type.enum';
+
 import { ProfilerData } from '../entities/ProfilerData.entity';
 import { ProfilerAuth } from '../entities/ProfilerAtuh.entity';
 import { ProfilerItem } from '../entities/ProfilerItem.entity';
+
+import { UI } from './ui.service';
 import { RmdirRecursive } from './rmdir-recursive.service';
+import { PersistanceService } from './persisance.service';
+import { PersistanceItemType } from '../enums/persistance-item-type.enum';
 
 export class SystemService {
 
     public get aliases(): ProfilerItem[] {
-        process.chdir(os.homedir());
-        const result = (<ProfilerData>JSON.parse(fs.readFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerDataFile).toString())).aliases;
-        return result.sort((a, b) => a.name.length - b.name.length);
-
+        const result = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData));
+        return !result.aliases ? [] : result.aliases.sort((a, b) => a.name.length - b.name.length);
     }
 
     public get functions(): ProfilerItem[] {
-        process.chdir(os.homedir());
-        return (<ProfilerData>JSON.parse(fs.readFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerDataFile).toString())).functions;
+        const result = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData))
+        return !result.functions ? [] : result.functions.sort((a, b) => a.name.length - b.name.length);
     }
 
     public help() {
@@ -44,7 +48,9 @@ export class SystemService {
         }
 
         process.chdir(os.homedir());
-        RmdirRecursive.rmdirRec(GENERAL.profilerDataDirectory);
+        if (fs.existsSync(GENERAL.profilerDataDirectory)) {
+            RmdirRecursive.rmdirRec(GENERAL.profilerDataDirectory);
+        }
 
         this.initializeCoreFiles();
         this.setGithubToken(token);
@@ -52,8 +58,8 @@ export class SystemService {
         this.setUserBashrcFilePath(usrBashrcPath);
 
         //  Set the sourcing of the shell_profiler bashrc on the main bashrc file 
-        let usrBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
         let source_path = '';
+        let usrBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
 
         if (os.platform() === 'win32') {
             console.log(chalk.yellow('Converting path to UNIX-like for sourcing.'));
@@ -75,10 +81,10 @@ export class SystemService {
             this.initializeCoreFiles();
         }
 
-        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
-        const auth: ProfilerAuth = JSON.parse(fs.readFileSync(GENERAL.profilerAuthFile, { encoding: 'UTF-8' }));
+        const auth: ProfilerAuth = <ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData);
         auth.githubToken = token;
-        this.updateAuthFile(auth);
+
+        PersistanceService.setItem(PersistanceItemType.authData, auth);
     }
 
     public setGithubUsername(username: string) {
@@ -86,10 +92,10 @@ export class SystemService {
             this.initializeCoreFiles();
         }
 
-        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
-        const auth: ProfilerAuth = JSON.parse(fs.readFileSync(GENERAL.profilerAuthFile, { encoding: 'UTF-8' }));
+        const auth: ProfilerAuth = <ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData);
         auth.githubUsername = username;
-        this.updateAuthFile(auth);
+
+        PersistanceService.setItem(PersistanceItemType.authData, auth);
     }
 
     public setUserBashrcFilePath(filePath: string) {
@@ -98,21 +104,20 @@ export class SystemService {
         }
 
         process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
-        const profileData: ProfilerData = JSON.parse(fs.readFileSync(GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
-        profileData.userBashrcFilePath = filePath;
-        this.updateDataFile(profileData);
+        const profilerData: ProfilerData = JSON.parse(fs.readFileSync(GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
+        profilerData.userBashrcFilePath = filePath;
+
+        PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
     }
 
     public upsertAlias(alias: ProfilerItem) {
-        let updated = false;
 
         if (!this.checkProfilerDataIntegrity()) {
             this.initializeCoreFiles();
         }
 
-        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
-        const profilerData: ProfilerData = JSON.parse(fs.readFileSync(GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
-
+        let updated = false;
+        const profilerData: ProfilerData = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
         if (!!profilerData && !profilerData.aliases) {
             profilerData.aliases = [];
         }
@@ -126,7 +131,8 @@ export class SystemService {
         } else {
             profilerData.aliases.push(alias);
         }
-        this.updateDataFile(profilerData);
+
+        PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
 
         console.log();
         UI.success(updated ? 'Alias updated successfully!' : 'Alias added successfully!');
@@ -134,14 +140,12 @@ export class SystemService {
     }
 
     public upsertFunc(func: ProfilerItem) {
-        let updated = false;
-
         if (!this.checkProfilerDataIntegrity()) {
             this.initializeCoreFiles();
         }
 
-        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
-        const profilerData: ProfilerData = JSON.parse(fs.readFileSync(GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
+        let updated = false;
+        const profilerData: ProfilerData = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
         if (!!profilerData && !profilerData.functions) {
             profilerData.functions = [];
         }
@@ -155,72 +159,44 @@ export class SystemService {
         } else {
             profilerData.functions.push(func);
         }
-        this.updateDataFile(profilerData);
+
+        PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
 
         console.log();
         UI.success(updated ? 'Function updated successfully!' : 'Function added successfully!');
         UI.warn('Remember that you have to restart your shell in order to use this function');
     }
 
+    public deleteItem(type: ItemType, id: string) {
+        if (type === ItemType.alias) {
+
+        }
+        if (type === ItemType.function) { }
+        if (type === ItemType.export) { }
+    }
+
     public checkProfilerDataIntegrity() {
-        process.chdir(os.homedir());
-
-        if (!fs.readdirSync(process.cwd()).find(f => f === GENERAL.profilerDataDirectory)) {
-            return false;
-        }
-
-        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
-        if (!fs.existsSync(GENERAL.profilerAuthFile)) {
-            return false;
-        }
-
-        if (!fs.existsSync(GENERAL.profilerDataFile)) {
-            return false;
-        }
-
-        if (!fs.existsSync(GENERAL.profilerBashFile)) {
-            return false;
-        }
-
-        return true;
+        return PersistanceService.checkFilesIntegrity();
     }
 
     private initializeCoreFiles() {
         console.log(chalk.yellow('Initializing ShellProfiler...'));
 
-        process.chdir(os.homedir());
+        const profilerAuth = new ProfilerAuth();
+        const profilerData = new ProfilerData();
+        const rawProfileData = '';
 
-        const auth = new ProfilerAuth();
-        const profile = new ProfilerData();
-        const bashrc_file = '';
+        profilerAuth.githubToken = null;
+        profilerAuth.githubUsername = null;
 
-        auth.githubToken = null;
-        auth.githubUsername = null;
-
-        profile.aliases = [];
-        profile.functions = [];
-        profile.gistName = null;
-        profile.userBashrcFilePath = null;
+        profilerData.aliases = [];
+        profilerData.functions = [];
+        profilerData.gistName = null;
+        profilerData.userBashrcFilePath = null;
 
         fs.mkdirSync(GENERAL.profilerDataDirectory);
-        fs.writeFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerAuthFile, JSON.stringify(auth), { encoding: 'UTF-8' });
-        fs.writeFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerDataFile, JSON.stringify(profile), { encoding: 'UTF-8' });
-        fs.writeFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashFile, bashrc_file, { encoding: 'UTF-8' });
-    }
-
-    private updateAuthFile(authFile: ProfilerAuth) {
-        fs.writeFileSync(os.homedir + path.sep + GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerAuthFile, JSON.stringify(authFile), { encoding: 'UTF-8' });
-    }
-
-    private updateDataFile(dataFile: ProfilerData) {
-        fs.writeFileSync(os.homedir + path.sep + GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerDataFile, JSON.stringify(dataFile), { encoding: 'UTF-8' });
-        this.updateBashrcFile(dataFile);
-    }
-
-    private updateBashrcFile(dataFile: ProfilerData) {
-        let bashrc_file = '';
-        dataFile.aliases.forEach(a => bashrc_file += `#${a.name}\n${a.command}\n\n`);
-        dataFile.functions.forEach(f => bashrc_file += `#${f.name}\n${f.command}\n\n`);
-        fs.writeFileSync(os.homedir + path.sep + GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashFile, bashrc_file, { encoding: 'UTF-8' });
+        PersistanceService.setItem(PersistanceItemType.authData, profilerAuth);
+        PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
+        PersistanceService.setItem(PersistanceItemType.rawProfileData, rawProfileData);
     }
 }

@@ -40,7 +40,7 @@ export class ShellProfiler {
 
     private dispatch() {
         let acceptedOptions: AcceptedOption[];
-        let extractionResult: { option: string, value?: string };
+        let extractionResult: { option: string, value?: string } | null;
 
         switch (this.args[0]) {
             //  TODO: Remove in production
@@ -71,11 +71,12 @@ export class ShellProfiler {
 
                 acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
-
+                if (!extractionResult) {
+                    return;
+                }
                 if (extractionResult.option.indexOf('--alias') !== -1) {
                     this.handleAliasListCall();
                 }
-
                 if (extractionResult.option.indexOf('--func') !== -1) {
                     this.handleFunctionListCall();
                 }
@@ -94,19 +95,18 @@ export class ShellProfiler {
                 ];
 
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
-
+                if (!extractionResult) {
+                    return;
+                }
                 if (extractionResult.option.indexOf('--token') !== -1 && extractionResult.value) {
                     this.handleTokenSetCall(extractionResult.value);
                 }
-
                 if (extractionResult.option.indexOf('--username') !== -1 && extractionResult.value) {
                     this.handleUsernameSetCall(extractionResult.value);
                 }
-
                 if (extractionResult.option === '--alias') {
                     this.handleAliasSetCall();
                 }
-
                 if (extractionResult.option === '--func') {
                     this.handleFunctionSetCall();
                 }
@@ -217,20 +217,21 @@ export class ShellProfiler {
         return allArgsPresent;
     }
 
-    private extractOptionsAndValues(argToWorkOn: number, acceptedOptions: AcceptedOption[], warnInConsole = true): DispatcherReturnSet {
+    private extractOptionsAndValues(argToWorkOn: number, acceptedOptions: AcceptedOption[], warnInConsole = true): DispatcherReturnSet | null {
         const mainArg = this.args[argToWorkOn];
         const returnSet = new DispatcherReturnSet();
         let matchingOption = acceptedOptions.find(opt => mainArg.indexOf(opt.option) !== -1 ? true : false);
 
         if (!matchingOption && warnInConsole) {
             UI.error('No matching options found for the given command');
-            return returnSet;
+            return null;
         }
 
         if (matchingOption && matchingOption.mustHaveValue) {
             const mainArgValue = mainArg.split(':')[1];
             if (!mainArgValue) {
                 UI.error('This command expects a value. Run the command again with its value');
+                return null;
             } else {
                 returnSet.option = mainArg;
                 returnSet.value = mainArgValue;
