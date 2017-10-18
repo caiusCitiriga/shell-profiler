@@ -4,6 +4,7 @@ const os = require("os");
 const fs = require("fs");
 const path = require("path");
 const proc = require("process");
+const chalk = require("chalk");
 const ui_service_1 = require("./ui.service");
 const help_configs_1 = require("../configs/help.configs");
 const general_configs_1 = require("../configs/general.configs");
@@ -11,6 +12,15 @@ const ProfilerData_entity_1 = require("../entities/ProfilerData.entity");
 const ProfilerAtuh_entity_1 = require("../entities/ProfilerAtuh.entity");
 const rmdir_recursive_service_1 = require("./rmdir-recursive.service");
 class SystemService {
+    get aliases() {
+        proc.chdir(os.homedir());
+        const result = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerDataFile).toString()).aliases;
+        return result.sort((a, b) => a.name.length - b.name.length);
+    }
+    get functions() {
+        proc.chdir(os.homedir());
+        return JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerDataFile).toString()).functions;
+    }
     help() {
         const set = [];
         help_configs_1.HELP.forEach(h => {
@@ -32,15 +42,16 @@ class SystemService {
         this.setUserBashrcFilePath(usrBashrcPath);
         //  Set the sourcing of the shell_profiler bashrc on the main bashrc file 
         let userBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
+        let source_path = '';
         if (os.platform() === 'win32') {
-            ui_service_1.UI.warn('Converting path to UNIX like for sourcing.');
+            console.log(chalk.yellow('Converting path to UNIX-like for sourcing.'));
             const username_folder = os.userInfo().username;
-            userBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource /c/Users/${username_folder}/${general_configs_1.GENERAL.profilerDataDirectory}/${general_configs_1.GENERAL.profilerBashrcFile}`;
+            source_path = `/c/Users/${username_folder}/${general_configs_1.GENERAL.profilerDataDirectory}/${general_configs_1.GENERAL.profilerBashFile}`;
         }
         else {
-            userBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerBashrcFile}`;
+            source_path = os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerBashFile;
         }
-        fs.writeFileSync(usrBashrcPath, userBashrcFile, { encoding: 'UTF-8' });
+        userBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${source_path}`;
         ui_service_1.UI.success('ShellProfiler has been successfully initialized!');
     }
     setGithubToken(token) {
@@ -92,7 +103,9 @@ class SystemService {
             profilerData.aliases.push(alias);
         }
         this.updateDataFile(profilerData);
+        console.log();
         ui_service_1.UI.success(updated ? 'Alias updated successfully!' : 'Alias added successfully!');
+        ui_service_1.UI.warn('Remember that you have to restart your shell in order to use this alias');
     }
     upsertFunc(func) {
         let updated = false;
@@ -116,7 +129,9 @@ class SystemService {
             profilerData.functions.push(func);
         }
         this.updateDataFile(profilerData);
+        console.log();
         ui_service_1.UI.success(updated ? 'Function updated successfully!' : 'Function added successfully!');
+        ui_service_1.UI.warn('Remember that you have to restart your shell in order to use this function');
     }
     checkProfilerDataIntegrity() {
         proc.chdir(os.homedir());
@@ -130,10 +145,13 @@ class SystemService {
         if (!fs.existsSync(general_configs_1.GENERAL.profilerDataFile)) {
             return false;
         }
+        if (!fs.existsSync(general_configs_1.GENERAL.profilerBashFile)) {
+            return false;
+        }
         return true;
     }
     initializeCoreFiles() {
-        ui_service_1.UI.warn('Initializing ShellProfiler...');
+        console.log(chalk.yellow('Initializing ShellProfiler...'));
         proc.chdir(os.homedir());
         const auth = new ProfilerAtuh_entity_1.ProfilerAuth();
         const profile = new ProfilerData_entity_1.ProfilerData();
@@ -147,7 +165,7 @@ class SystemService {
         fs.mkdirSync(general_configs_1.GENERAL.profilerDataDirectory);
         fs.writeFileSync(general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerAuthFile, JSON.stringify(auth), { encoding: 'UTF-8' });
         fs.writeFileSync(general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerDataFile, JSON.stringify(profile), { encoding: 'UTF-8' });
-        fs.writeFileSync(general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerBashrcFile, bashrc_file, { encoding: 'UTF-8' });
+        fs.writeFileSync(general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerBashFile, bashrc_file, { encoding: 'UTF-8' });
     }
     updateAuthFile(authFile) {
         fs.writeFileSync(os.homedir + path.sep + general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerAuthFile, JSON.stringify(authFile), { encoding: 'UTF-8' });
@@ -160,8 +178,7 @@ class SystemService {
         let bashrc_file = '';
         dataFile.aliases.forEach(a => bashrc_file += `#${a.name}\n${a.command}\n\n`);
         dataFile.functions.forEach(f => bashrc_file += `#${f.name}\n${f.command}\n\n`);
-        console.log(bashrc_file);
-        fs.writeFileSync(os.homedir + path.sep + general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerBashrcFile, bashrc_file, { encoding: 'UTF-8' });
+        fs.writeFileSync(os.homedir + path.sep + general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerBashFile, bashrc_file, { encoding: 'UTF-8' });
     }
 }
 exports.SystemService = SystemService;

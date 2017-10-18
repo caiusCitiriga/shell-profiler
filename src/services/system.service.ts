@@ -14,6 +14,19 @@ import { ProfilerItem } from '../entities/ProfilerItem.entity';
 import { RmdirRecursive } from './rmdir-recursive.service';
 
 export class SystemService {
+
+    public get aliases(): ProfilerItem[] {
+        proc.chdir(os.homedir());
+        const result = (<ProfilerData>JSON.parse(fs.readFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerDataFile).toString())).aliases;
+        return result.sort((a, b) => a.name.length - b.name.length);
+
+    }
+
+    public get functions(): ProfilerItem[] {
+        proc.chdir(os.homedir());
+        return (<ProfilerData>JSON.parse(fs.readFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerDataFile).toString())).functions;
+    }
+
     public help() {
         const set: any = [];
         HELP.forEach(h => {
@@ -40,16 +53,19 @@ export class SystemService {
 
         //  Set the sourcing of the shell_profiler bashrc on the main bashrc file 
         let userBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
+        let source_path = '';
 
         if (os.platform() === 'win32') {
-            UI.warn('Converting path to UNIX like for sourcing.');
+            console.log(chalk.yellow('Converting path to UNIX-like for sourcing.'));
+
             const username_folder = os.userInfo().username;
-            userBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource /c/Users/${username_folder}/${GENERAL.profilerDataDirectory}/${GENERAL.profilerBashrcFile}`;
+            source_path = `/c/Users/${username_folder}/${GENERAL.profilerDataDirectory}/${GENERAL.profilerBashFile}`
         } else {
-            userBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${os.homedir() + path.sep + GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashrcFile}`;
+            source_path = os.homedir() + path.sep + GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashFile;
         }
 
-        fs.writeFileSync(usrBashrcPath, userBashrcFile, { encoding: 'UTF-8' });
+        userBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${source_path}`;
+
         UI.success('ShellProfiler has been successfully initialized!');
     }
 
@@ -110,7 +126,10 @@ export class SystemService {
             profilerData.aliases.push(alias);
         }
         this.updateDataFile(profilerData);
+
+        console.log();
         UI.success(updated ? 'Alias updated successfully!' : 'Alias added successfully!');
+        UI.warn('Remember that you have to restart your shell in order to use this alias');
     }
 
     public upsertFunc(func: ProfilerItem) {
@@ -136,10 +155,13 @@ export class SystemService {
             profilerData.functions.push(func);
         }
         this.updateDataFile(profilerData);
+
+        console.log();
         UI.success(updated ? 'Function updated successfully!' : 'Function added successfully!');
+        UI.warn('Remember that you have to restart your shell in order to use this function');
     }
 
-    private checkProfilerDataIntegrity() {
+    public checkProfilerDataIntegrity() {
         proc.chdir(os.homedir());
 
         if (!fs.readdirSync(proc.cwd()).find(f => f === GENERAL.profilerDataDirectory)) {
@@ -155,11 +177,15 @@ export class SystemService {
             return false;
         }
 
+        if (!fs.existsSync(GENERAL.profilerBashFile)) {
+            return false;
+        }
+
         return true;
     }
 
     private initializeCoreFiles() {
-        UI.warn('Initializing ShellProfiler...');
+        console.log(chalk.yellow('Initializing ShellProfiler...'));
 
         proc.chdir(os.homedir());
 
@@ -178,7 +204,7 @@ export class SystemService {
         fs.mkdirSync(GENERAL.profilerDataDirectory);
         fs.writeFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerAuthFile, JSON.stringify(auth), { encoding: 'UTF-8' });
         fs.writeFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerDataFile, JSON.stringify(profile), { encoding: 'UTF-8' });
-        fs.writeFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashrcFile, bashrc_file, { encoding: 'UTF-8' });
+        fs.writeFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashFile, bashrc_file, { encoding: 'UTF-8' });
     }
 
     private updateAuthFile(authFile: ProfilerAuth) {
@@ -194,7 +220,6 @@ export class SystemService {
         let bashrc_file = '';
         dataFile.aliases.forEach(a => bashrc_file += `#${a.name}\n${a.command}\n\n`);
         dataFile.functions.forEach(f => bashrc_file += `#${f.name}\n${f.command}\n\n`);
-        console.log(bashrc_file);
-        fs.writeFileSync(os.homedir + path.sep + GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashrcFile, bashrc_file, { encoding: 'UTF-8' });
+        fs.writeFileSync(os.homedir + path.sep + GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashFile, bashrc_file, { encoding: 'UTF-8' });
     }
 }

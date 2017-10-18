@@ -8,7 +8,7 @@ export const GENERAL = {
     gistDescription: '@ShellProfilerData',
 
     //  Profiler main files
-    profilerDataFile: 'shell_profiler.json',
+    profilerBashFile: 'shell_profiler_bashrc',
+    profilerDataFile: 'shell_profiler.data.json',
     profilerAuthFile: 'shell_profiler.auth.json',
-    profilerBashrcFile: 'shell_profiler_bashrc',
 }

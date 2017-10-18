@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 require("rxjs/add/operator/filter");
@@ -60,6 +61,30 @@ class ShellProfiler {
                     });
                 });
                 break;
+            case 'stat':
+                if (this.sys.checkProfilerDataIntegrity()) {
+                    ui_service_1.UI.success('ShellProfiler is happy! :)');
+                    return;
+                }
+                ui_service_1.UI.error('There are issues with your configuration. Run the init script to make ShellProfiler happy again');
+                break;
+            case 'list':
+                if (!this.checkExtraOptionsPresence([1])) {
+                    return;
+                }
+                acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
+                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+                if (extractionResult.option.indexOf('--alias') !== -1) {
+                    const list = [];
+                    const result = this.sys.aliases;
+                    result.forEach(als => {
+                        list.push({ key: als.name, value: als.desc });
+                    });
+                    ui_service_1.UI.printKeyValuePairs(list);
+                }
+                if (extractionResult.option.indexOf('--func') !== -1) {
+                }
+                break;
             case 'set':
                 if (!this.checkExtraOptionsPresence([1])) {
                     return;
@@ -79,20 +104,22 @@ class ShellProfiler {
                 acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
                 if (extractionResult.option === '--alias') {
-                    ui_service_1.UI.askUserInput(chalk.green('Alias name: '), (alias) => {
-                        ui_service_1.UI.askUserInput(chalk.green('Alias body: '), (data) => {
-                            const aliasName = alias;
-                            const aliasBody = `alias ${aliasName}="${data}"`;
-                            this.sys.upsertAlias({ id: UniqueID_service_1.UniqueIdUtility.generateId(), name: aliasName, command: aliasBody });
+                    ui_service_1.UI.askUserInput(chalk.green('Alias name: '), aliasName => {
+                        ui_service_1.UI.askUserInput(chalk.green('Alias description: '), description => {
+                            ui_service_1.UI.askUserInput(chalk.green('Alias body: '), data => {
+                                const aliasBody = `alias ${aliasName}="${data}"`;
+                                this.sys.upsertAlias({ id: UniqueID_service_1.UniqueIdUtility.generateId(), name: aliasName, desc: description, command: aliasBody });
+                            });
                         });
                     });
                 }
                 if (extractionResult.option === '--func') {
-                    ui_service_1.UI.askUserInput(chalk.green('Function name: '), (func) => {
-                        ui_service_1.UI.askUserInput(chalk.green('Function body: '), (data) => {
-                            const funcName = func;
-                            const funcBody = `function ${funcName}(){\n\t${data}\n}`;
-                            this.sys.upsertFunc({ id: UniqueID_service_1.UniqueIdUtility.generateId(), name: funcName, command: funcBody });
+                    ui_service_1.UI.askUserInput(chalk.green('Function name: '), (funcName) => {
+                        ui_service_1.UI.askUserInput(chalk.green('Function description: '), description => {
+                            ui_service_1.UI.askUserInput(chalk.green('Function body: '), (data) => {
+                                const funcBody = `function ${funcName}(){\n\t${data}\n}`;
+                                this.sys.upsertFunc({ id: UniqueID_service_1.UniqueIdUtility.generateId(), name: funcName, desc: description, command: funcBody });
+                            });
                         });
                     });
                 }

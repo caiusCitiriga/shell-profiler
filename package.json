@@ -1,23 +1,50 @@
 {
-    "name": "webpack-test",
-    "version": "1.0.0",
-    "description": "",
-    "main": "webpack.config.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "rxjs": "5.4.3",
-        "chalk": "2.1.0",
-        "request": "2.83.0",
-        "typescript": "2.5.2"
-    },
-    "devDependencies": {
-        "@types/rx": "4.1.1",
-        "@types/node": "8.0.41",
-        "@types/chalk": "0.4.31",
-        "@types/request": "2.0.6"
-    }
+  "name": "shell-profiler",
+  "version": "0.1.0",
+  "description": "Sync your bash profile across multiple Node capable machines. Storing your aliases, functions and exports on Gists",
+  "main": "webpack.config.js",
+  "bin": {
+    "sp": "./dist/main.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Caius Citiriga",
+  "license": "MIT",
+  "dependencies": {
+    "rxjs": "5.4.3",
+    "chalk": "2.1.0",
+    "request": "2.83.0",
+    "typescript": "2.5.2"
+  },
+  "devDependencies": {
+    "@types/rx": "4.1.1",
+    "@types/node": "8.0.41",
+    "@types/chalk": "0.4.31",
+    "@types/request": "2.0.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caiusCitiriga/shell-profiler.git"
+  },
+  "keywords": [
+    "bash",
+    "sh",
+    "shell",
+    "profile",
+    "bash_profile",
+    "bashrc",
+    "unix",
+    "linux",
+    "terminal",
+    "console",
+    "sync",
+    "gists",
+    "github",
+    "gist"
+  ],
+  "bugs": {
+    "url": "https://github.com/caiusCitiriga/shell-profiler/issues"
+  },
+  "homepage": "https://github.com/caiusCitiriga/shell-profiler#readme"
 }

@@ -3,7 +3,15 @@ import * as chalk from 'chalk';
 export const HELP = [
     {
         command: 'init',
-        options: 'Interactive ShellProfiler core files initailization\n',
+        options: `Interactive ShellProfiler core files initailization\n${chalk.magenta('Options: none')}\n`,
+    },
+    {
+        command: 'stat',
+        options: `Checks if everything is ok\n${chalk.magenta('Options: none')}\n`,
+    },
+    {
+        command: 'list',
+        options: `Lists all the available aliases or functions.\n${chalk.magenta('Options: [--alias, --func]')}\n`,
     },
     {
         command: 'set',

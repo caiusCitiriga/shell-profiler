@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 import 'rxjs/add/operator/filter';
 
 import * as os from 'os';
@@ -76,6 +78,38 @@ export class ShellProfiler {
                 });
                 break;
 
+            case 'stat':
+                if (this.sys.checkProfilerDataIntegrity()) {
+                    UI.success('ShellProfiler is happy! :)');
+                    return;
+                }
+
+                UI.error('There are issues with your configuration. Run the init script to make ShellProfiler happy again');
+                break;
+
+            case 'list':
+                if (!this.checkExtraOptionsPresence([1])) {
+                    return;
+                }
+
+                acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
+                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+
+                if (extractionResult.option.indexOf('--alias') !== -1) {
+                    const list: { key: string, value: string }[] = [];
+                    const result = this.sys.aliases;
+                    result.forEach(als => {
+                        list.push({ key: als.name, value: als.desc });
+                    });
+
+                    UI.printKeyValuePairs(list);
+                }
+
+                if (extractionResult.option.indexOf('--func') !== -1) {
+
+                }
+                break;
+
             case 'set':
                 if (!this.checkExtraOptionsPresence([1])) {
                     return;
@@ -99,21 +133,23 @@ export class ShellProfiler {
                 acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
                 if (extractionResult.option === '--alias') {
-                    UI.askUserInput(chalk.green('Alias name: '), (alias) => {
-                        UI.askUserInput(chalk.green('Alias body: '), (data) => {
-                            const aliasName = alias;
-                            const aliasBody = `alias ${aliasName}="${data}"`;
-                            this.sys.upsertAlias({ id: UniqueIdUtility.generateId(), name: aliasName, command: aliasBody });
+                    UI.askUserInput(chalk.green('Alias name: '), aliasName => {
+                        UI.askUserInput(chalk.green('Alias description: '), description => {
+                            UI.askUserInput(chalk.green('Alias body: '), data => {
+                                const aliasBody = `alias ${aliasName}="${data}"`;
+                                this.sys.upsertAlias({ id: UniqueIdUtility.generateId(), name: aliasName, desc: description, command: aliasBody });
+                            });
                         });
                     });
                 }
 
                 if (extractionResult.option === '--func') {
-                    UI.askUserInput(chalk.green('Function name: '), (func) => {
-                        UI.askUserInput(chalk.green('Function body: '), (data) => {
-                            const funcName = func;
-                            const funcBody = `function ${funcName}(){\n\t${data}\n}`;
-                            this.sys.upsertFunc({ id: UniqueIdUtility.generateId(), name: funcName, command: funcBody });
+                    UI.askUserInput(chalk.green('Function name: '), (funcName) => {
+                        UI.askUserInput(chalk.green('Function description: '), description => {
+                            UI.askUserInput(chalk.green('Function body: '), (data) => {
+                                const funcBody = `function ${funcName}(){\n\t${data}\n}`;
+                                this.sys.upsertFunc({ id: UniqueIdUtility.generateId(), name: funcName, desc: description, command: funcBody });
+                            });
                         });
                     });
                 }
