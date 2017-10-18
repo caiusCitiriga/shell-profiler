@@ -1,9 +1,9 @@
 import * as os from 'os';
 import * as fs from 'fs';
-import * as cp from 'child_process';
 import * as path from 'path';
-import * as proc from 'process';
 import * as chalk from 'chalk';
+import * as process from 'process';
+import * as child_process from 'child_process';
 
 import { UI } from './ui.service';
 import { HELP } from '../configs/help.configs';
@@ -16,14 +16,14 @@ import { RmdirRecursive } from './rmdir-recursive.service';
 export class SystemService {
 
     public get aliases(): ProfilerItem[] {
-        proc.chdir(os.homedir());
+        process.chdir(os.homedir());
         const result = (<ProfilerData>JSON.parse(fs.readFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerDataFile).toString())).aliases;
         return result.sort((a, b) => a.name.length - b.name.length);
 
     }
 
     public get functions(): ProfilerItem[] {
-        proc.chdir(os.homedir());
+        process.chdir(os.homedir());
         return (<ProfilerData>JSON.parse(fs.readFileSync(GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerDataFile).toString())).functions;
     }
 
@@ -43,7 +43,7 @@ export class SystemService {
             return;
         }
 
-        proc.chdir(os.homedir());
+        process.chdir(os.homedir());
         RmdirRecursive.rmdirRec(GENERAL.profilerDataDirectory);
 
         this.initializeCoreFiles();
@@ -75,7 +75,7 @@ export class SystemService {
             this.initializeCoreFiles();
         }
 
-        proc.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
         const auth: ProfilerAuth = JSON.parse(fs.readFileSync(GENERAL.profilerAuthFile, { encoding: 'UTF-8' }));
         auth.githubToken = token;
         this.updateAuthFile(auth);
@@ -86,7 +86,7 @@ export class SystemService {
             this.initializeCoreFiles();
         }
 
-        proc.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
         const auth: ProfilerAuth = JSON.parse(fs.readFileSync(GENERAL.profilerAuthFile, { encoding: 'UTF-8' }));
         auth.githubUsername = username;
         this.updateAuthFile(auth);
@@ -97,7 +97,7 @@ export class SystemService {
             this.initializeCoreFiles();
         }
 
-        proc.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
         const profileData: ProfilerData = JSON.parse(fs.readFileSync(GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
         profileData.userBashrcFilePath = filePath;
         this.updateDataFile(profileData);
@@ -110,7 +110,7 @@ export class SystemService {
             this.initializeCoreFiles();
         }
 
-        proc.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
         const profilerData: ProfilerData = JSON.parse(fs.readFileSync(GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
 
         if (!!profilerData && !profilerData.aliases) {
@@ -140,7 +140,7 @@ export class SystemService {
             this.initializeCoreFiles();
         }
 
-        proc.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
         const profilerData: ProfilerData = JSON.parse(fs.readFileSync(GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
         if (!!profilerData && !profilerData.functions) {
             profilerData.functions = [];
@@ -163,13 +163,13 @@ export class SystemService {
     }
 
     public checkProfilerDataIntegrity() {
-        proc.chdir(os.homedir());
+        process.chdir(os.homedir());
 
-        if (!fs.readdirSync(proc.cwd()).find(f => f === GENERAL.profilerDataDirectory)) {
+        if (!fs.readdirSync(process.cwd()).find(f => f === GENERAL.profilerDataDirectory)) {
             return false;
         }
 
-        proc.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + GENERAL.profilerDataDirectory);
         if (!fs.existsSync(GENERAL.profilerAuthFile)) {
             return false;
         }
@@ -188,7 +188,7 @@ export class SystemService {
     private initializeCoreFiles() {
         console.log(chalk.yellow('Initializing ShellProfiler...'));
 
-        proc.chdir(os.homedir());
+        process.chdir(os.homedir());
 
         const auth = new ProfilerAuth();
         const profile = new ProfilerData();

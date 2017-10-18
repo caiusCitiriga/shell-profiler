@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const os = require("os");
 const fs = require("fs");
 const path = require("path");
-const proc = require("process");
 const chalk = require("chalk");
+const process = require("process");
 const ui_service_1 = require("./ui.service");
 const help_configs_1 = require("../configs/help.configs");
 const general_configs_1 = require("../configs/general.configs");
@@ -13,12 +13,12 @@ const ProfilerAtuh_entity_1 = require("../entities/ProfilerAtuh.entity");
 const rmdir_recursive_service_1 = require("./rmdir-recursive.service");
 class SystemService {
     get aliases() {
-        proc.chdir(os.homedir());
+        process.chdir(os.homedir());
         const result = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerDataFile).toString()).aliases;
         return result.sort((a, b) => a.name.length - b.name.length);
     }
     get functions() {
-        proc.chdir(os.homedir());
+        process.chdir(os.homedir());
         return JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerDataFile).toString()).functions;
     }
     help() {
@@ -34,7 +34,7 @@ class SystemService {
             ui_service_1.UI.error('The path provided for the bashrc file is not valid.');
             return;
         }
-        proc.chdir(os.homedir());
+        process.chdir(os.homedir());
         rmdir_recursive_service_1.RmdirRecursive.rmdirRec(general_configs_1.GENERAL.profilerDataDirectory);
         this.initializeCoreFiles();
         this.setGithubToken(token);
@@ -59,7 +59,7 @@ class SystemService {
         if (!this.checkProfilerDataIntegrity()) {
             this.initializeCoreFiles();
         }
-        proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
         const auth = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerAuthFile, { encoding: 'UTF-8' }));
         auth.githubToken = token;
         this.updateAuthFile(auth);
@@ -68,7 +68,7 @@ class SystemService {
         if (!this.checkProfilerDataIntegrity()) {
             this.initializeCoreFiles();
         }
-        proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
         const auth = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerAuthFile, { encoding: 'UTF-8' }));
         auth.githubUsername = username;
         this.updateAuthFile(auth);
@@ -77,7 +77,7 @@ class SystemService {
         if (!this.checkProfilerDataIntegrity()) {
             this.initializeCoreFiles();
         }
-        proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
         const profileData = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
         profileData.userBashrcFilePath = filePath;
         this.updateDataFile(profileData);
@@ -87,7 +87,7 @@ class SystemService {
         if (!this.checkProfilerDataIntegrity()) {
             this.initializeCoreFiles();
         }
-        proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
         const profilerData = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
         if (!!profilerData && !profilerData.aliases) {
             profilerData.aliases = [];
@@ -113,7 +113,7 @@ class SystemService {
         if (!this.checkProfilerDataIntegrity()) {
             this.initializeCoreFiles();
         }
-        proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
         const profilerData = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
         if (!!profilerData && !profilerData.functions) {
             profilerData.functions = [];
@@ -135,11 +135,11 @@ class SystemService {
         ui_service_1.UI.warn('Remember that you have to restart your shell in order to use this function');
     }
     checkProfilerDataIntegrity() {
-        proc.chdir(os.homedir());
-        if (!fs.readdirSync(proc.cwd()).find(f => f === general_configs_1.GENERAL.profilerDataDirectory)) {
+        process.chdir(os.homedir());
+        if (!fs.readdirSync(process.cwd()).find(f => f === general_configs_1.GENERAL.profilerDataDirectory)) {
             return false;
         }
-        proc.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
+        process.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
         if (!fs.existsSync(general_configs_1.GENERAL.profilerAuthFile)) {
             return false;
         }
@@ -153,7 +153,7 @@ class SystemService {
     }
     initializeCoreFiles() {
         console.log(chalk.yellow('Initializing ShellProfiler...'));
-        proc.chdir(os.homedir());
+        process.chdir(os.homedir());
         const auth = new ProfilerAtuh_entity_1.ProfilerAuth();
         const profile = new ProfilerData_entity_1.ProfilerData();
         const bashrc_file = '';

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const path = require("path");
 const fs = require("fs");
+const path = require("path");
 class RmdirRecursive {
     static rmdirRec(dir) {
         let list = fs.readdirSync(dir);

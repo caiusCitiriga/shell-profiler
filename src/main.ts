@@ -3,9 +3,9 @@
 import 'rxjs/add/operator/filter';
 
 import * as os from 'os';
-import * as cp from 'child_process';
-import * as proc from 'process';
 import * as chalk from 'chalk';
+import * as process from 'process';
+import * as child_process from 'child_process';
 
 import { AcceptedOption } from './entities/AcceptedOption.entity';
 import { DispatcherReturnSet } from './entities/DispatcherReturnSet.entity';
@@ -26,7 +26,7 @@ export class ShellProfiler {
     }
 
     public start() {
-        this.args = proc.argv;
+        this.args = process.argv;
         this.args.shift();
         this.args.shift();
 
@@ -43,9 +43,7 @@ export class ShellProfiler {
         let extractionResult: { option: string, value?: string };
 
         switch (this.args[0]) {
-            case 'os':
-                console.log(os.userInfo());
-                break;
+            //  TODO: Remove in production
             case 'tkn':
                 const github = new GitHubService();
                 let tkn = ""
@@ -54,28 +52,7 @@ export class ShellProfiler {
                 break;
 
             case 'init':
-                UI.askUserInput(chalk.green('GitHub authorization token: '), token => {
-                    UI.askUserInput(chalk.green('GitHub username: '), username => {
-                        UI.askUserInput(chalk.green('Your bashrc file absolute path: '), bashrc_path => {
-                            UI.printKeyValuePairs([
-                                { key: 'Token', value: token },
-                                { key: 'Username', value: username },
-                                { key: 'Bashrc path', value: bashrc_path }
-                            ]);
-                            UI.askUserInput(chalk.yellow('Do you confirm?') + ' Y/N ', (answer: string) => {
-                                if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === '') {
-                                    this.sys.init(token, username, bashrc_path);
-                                    return;
-                                }
-
-                                if (answer.toLowerCase().trim() === 'n' || (answer.toLowerCase().trim() !== 'y' && answer.toLowerCase().trim() !== 'n')) {
-                                    this.args[0] = 'init';
-                                    this.dispatch();
-                                }
-                            })
-                        });
-                    });
-                });
+                this.handleInitCall();
                 break;
 
             case 'stat':
@@ -96,13 +73,7 @@ export class ShellProfiler {
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
 
                 if (extractionResult.option.indexOf('--alias') !== -1) {
-                    const list: { key: string, value: string }[] = [];
-                    const result = this.sys.aliases;
-                    result.forEach(als => {
-                        list.push({ key: als.name, value: als.desc });
-                    });
-
-                    UI.printKeyValuePairs(list);
+                    this.handleAliasListCall();
                 }
 
                 if (extractionResult.option.indexOf('--func') !== -1) {
@@ -115,43 +86,29 @@ export class ShellProfiler {
                     return;
                 }
 
-                acceptedOptions = [{ option: '--token', mustHaveValue: true }, { option: '--username', mustHaveValue: true }];
+                acceptedOptions = [
+                    { option: '--alias' },
+                    { option: '--func' },
+                    { option: '--token', mustHaveValue: true },
+                    { option: '--username', mustHaveValue: true }
+                ];
+
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
 
                 if (extractionResult.option.indexOf('--token') !== -1 && extractionResult.value) {
-                    this.sys.setGithubToken(extractionResult.value);
-                    UI.success(`GitHub access token successfully set to "${extractionResult.value}"`);
+                    this.handleTokenSetCall(extractionResult.value);
                 }
 
                 if (extractionResult.option.indexOf('--username') !== -1 && extractionResult.value) {
-                    this.sys.setGithubUsername(extractionResult.value);
-                    UI.success(`Username successfully set to "${extractionResult.value}"`);
+                    this.handleUsernameSetCall(extractionResult.value);
                 }
-                break;
 
-            case 'new':
-                acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
-                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
                 if (extractionResult.option === '--alias') {
-                    UI.askUserInput(chalk.green('Alias name: '), aliasName => {
-                        UI.askUserInput(chalk.green('Alias description: '), description => {
-                            UI.askUserInput(chalk.green('Alias body: '), data => {
-                                const aliasBody = `alias ${aliasName}="${data}"`;
-                                this.sys.upsertAlias({ id: UniqueIdUtility.generateId(), name: aliasName, desc: description, command: aliasBody });
-                            });
-                        });
-                    });
+                    this.handleAliasSetCall();
                 }
 
                 if (extractionResult.option === '--func') {
-                    UI.askUserInput(chalk.green('Function name: '), (funcName) => {
-                        UI.askUserInput(chalk.green('Function description: '), description => {
-                            UI.askUserInput(chalk.green('Function body: '), (data) => {
-                                const funcBody = `function ${funcName}(){\n\t${data}\n}`;
-                                this.sys.upsertFunc({ id: UniqueIdUtility.generateId(), name: funcName, desc: description, command: funcBody });
-                            });
-                        });
-                    });
+                    this.handleFunctionSetCall();
                 }
                 break;
 
@@ -159,7 +116,7 @@ export class ShellProfiler {
                 UI.print(!!this.checkExtraOptionsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
                 break;
 
-            case 'edit':
+            case 'help':
                 UI.print(!!this.checkExtraOptionsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
                 break;
 
@@ -168,6 +125,73 @@ export class ShellProfiler {
                 UI.warn('No command exists with that name');
                 break;
         }
+    }
+
+    private handleInitCall() {
+        UI.askUserInput(chalk.green('GitHub authorization token: '), token => {
+            UI.askUserInput(chalk.green('GitHub username: '), username => {
+                UI.askUserInput(chalk.green('Your bashrc file absolute path: '), bashrc_path => {
+                    UI.printKeyValuePairs([
+                        { key: 'Token', value: token },
+                        { key: 'Username', value: username },
+                        { key: 'Bashrc path', value: bashrc_path }
+                    ]);
+                    UI.askUserInput(chalk.yellow('Do you confirm?') + ' Y/N ', (answer: string) => {
+                        if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === '') {
+                            this.sys.init(token, username, bashrc_path);
+                            return;
+                        }
+
+                        if (answer.toLowerCase().trim() === 'n' || (answer.toLowerCase().trim() !== 'y' && answer.toLowerCase().trim() !== 'n')) {
+                            this.args[0] = 'init';
+                            this.dispatch();
+                        }
+                    })
+                });
+            });
+        });
+    }
+
+    private handleAliasListCall() {
+        const list: { key: string, value: string }[] = [];
+        const result = this.sys.aliases;
+        result.forEach(als => {
+            list.push({ key: als.name, value: als.desc });
+        });
+
+        UI.printKeyValuePairs(list);
+    }
+
+    private handleTokenSetCall(extractionResultValue: string) {
+        this.sys.setGithubToken(extractionResultValue);
+        UI.success(`GitHub access token successfully set to "${extractionResultValue}"`);
+    }
+
+    private handleUsernameSetCall(extractionResultValue: string) {
+        this.sys.setGithubUsername(extractionResultValue);
+        UI.success(`Username successfully set to "${extractionResultValue}"`);
+    }
+
+    private handleAliasSetCall() {
+        UI.askUserInput(chalk.green('Alias name: '), aliasName => {
+            UI.askUserInput(chalk.green('Alias description: '), description => {
+                UI.askUserInput(chalk.green('Alias body: '), data => {
+                    const aliasBody = `alias ${aliasName}="${data}"`;
+                    this.sys.upsertAlias({ id: UniqueIdUtility.generateId(), name: aliasName, desc: description, command: aliasBody });
+                });
+            });
+        });
+    }
+
+    private handleFunctionSetCall() {
+        UI.askUserInput(chalk.green('Function name: '), (funcName) => {
+            UI.askUserInput(chalk.green('Function description: '), description => {
+                UI.askUserInput(chalk.green('Function body: '), (data) => {
+                    const funcBody = `function ${funcName}(){\n\t${data}\n}`;
+                    this.sys.upsertFunc({ id: UniqueIdUtility.generateId(), name: funcName, desc: description, command: funcBody });
+                });
+            });
+        });
     }
 
     private checkExtraOptionsPresence(howMany: number[], warnInConsole = true) {
