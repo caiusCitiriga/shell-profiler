@@ -55,6 +55,7 @@ class ShellProfiler {
                     this.handleAliasListCall();
                 }
                 if (extractionResult.option.indexOf('--func') !== -1) {
+                    this.handleFunctionListCall();
                 }
                 break;
             case 'set':
@@ -85,7 +86,7 @@ class ShellProfiler {
                 ui_service_1.UI.print(!!this.checkExtraOptionsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
                 break;
             case 'help':
-                ui_service_1.UI.print(!!this.checkExtraOptionsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
+                this.sys.help();
                 break;
             default:
                 //  Look for an available alias or function    
@@ -121,6 +122,14 @@ class ShellProfiler {
         const result = this.sys.aliases;
         result.forEach(als => {
             list.push({ key: als.name, value: als.desc });
+        });
+        ui_service_1.UI.printKeyValuePairs(list);
+    }
+    handleFunctionListCall() {
+        const list = [];
+        const result = this.sys.functions;
+        result.forEach(func => {
+            list.push({ key: func.name, value: func.desc });
         });
         ui_service_1.UI.printKeyValuePairs(list);
     }

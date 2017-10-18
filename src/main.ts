@@ -77,7 +77,7 @@ export class ShellProfiler {
                 }
 
                 if (extractionResult.option.indexOf('--func') !== -1) {
-
+                    this.handleFunctionListCall();
                 }
                 break;
 
@@ -117,7 +117,7 @@ export class ShellProfiler {
                 break;
 
             case 'help':
-                UI.print(!!this.checkExtraOptionsPresence([1]) ? chalk.green('OK') : chalk.red('MISSING ARG'));
+                this.sys.help();
                 break;
 
             default:
@@ -157,6 +157,16 @@ export class ShellProfiler {
         const result = this.sys.aliases;
         result.forEach(als => {
             list.push({ key: als.name, value: als.desc });
+        });
+
+        UI.printKeyValuePairs(list);
+    }
+
+    private handleFunctionListCall() {
+        const list: { key: string, value: string }[] = [];
+        const result = this.sys.functions;
+        result.forEach(func => {
+            list.push({ key: func.name, value: func.desc });
         });
 
         UI.printKeyValuePairs(list);
