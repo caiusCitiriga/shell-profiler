@@ -47,4 +47,18 @@ This file contains your **aliases**, **functions** and **exports** in JSON forma
 
 ***shell_profiler_bashrc***  
 This is the file that contains all your **aliases**, **functions** and **exports** written in a "bash source capable" way. It's  basically the old **.bashrc**. The file that you were used to write by your own, now is fully managed by **SP**.  
-***Be aware that if you manually edit that file, when the first CRUD operation will occur, your edit will be lost.***
+***Be aware that if you manually edit that file, when the first CRUD operation will occur, your edit will be lost.***  
+
+---
+
+## Help ShellProfiler grow
+If you like this project please help me with your feedback. Found a bug? Want a feature? Want some help? Feel free to open a [Issue on GitHub](https://github.com/caiuscitiriga/smart-cli/issues).
+
+## Versioning
+We use [SemVer](http://semver.org/) for versioning. 
+
+## Authors
+* [**Caius Citiriga**](https://github.com/caiuscitiriga)
+
+## License
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
