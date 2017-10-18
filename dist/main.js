@@ -91,7 +91,7 @@ class ShellProfiler {
                     this.handleFunctionSetCall();
                 }
                 break;
-            case 'delete':
+            case 'del':
                 if (!this.checkExtraOptionsPresence([1])) {
                     return;
                 }

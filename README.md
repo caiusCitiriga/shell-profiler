@@ -52,6 +52,11 @@ This is the file that contains all your **aliases**, **functions** and **exports
 
 ---
 
+## GitHub communication and Gists storage system
+### [This feature is still a work in progress.]
+
+---
+
 ## Help ShellProfiler grow
 If you like this project please help me with your feedback. Found a bug? Want a feature? Want some help? Feel free to open a [Issue on GitHub](https://github.com/caiuscitiriga/smart-cli/issues).
 

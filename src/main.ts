@@ -116,7 +116,7 @@ export class ShellProfiler {
                 }
                 break;
 
-            case 'delete':
+            case 'del':
                 if (!this.checkExtraOptionsPresence([1])) {
                     return;
                 }
