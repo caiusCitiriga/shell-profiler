@@ -1,23 +1,25 @@
 import 'rxjs/add/operator/filter';
 
-import * as chalk from 'chalk';
-import * as proc from 'process';
+import * as os from 'os';
 import * as cp from 'child_process';
+import * as proc from 'process';
+import * as chalk from 'chalk';
 
-import { System } from './services/system.service';
-import { GitHubService } from './services/github.service';
 import { AcceptedOption } from './entities/AcceptedOption.entity';
-import { UI } from './services/ui.service';
 import { DispatcherReturnSet } from './entities/DispatcherReturnSet.entity';
+
+import { UI } from './services/ui.service';
+import { SystemService } from './services/system.service';
+import { GitHubService } from './services/github.service';
 import { UniqueIdUtility } from './services/UniqueID.service';
 
 export class ShellProfiler {
     private args: string[];
-    private sys: System;
+    private sys: SystemService;
     private github: GitHubService;
 
     public constructor() {
-        this.sys = new System();
+        this.sys = new SystemService();
         this.github = new GitHubService();
     }
 
@@ -31,7 +33,6 @@ export class ShellProfiler {
             return;
         }
 
-        UI.print('Here\'s a list of all available commands and their usage or options');
         this.sys.help();
     }
 
@@ -40,11 +41,39 @@ export class ShellProfiler {
         let extractionResult: { option: string, value?: string };
 
         switch (this.args[0]) {
+            case 'os':
+                console.log(os.userInfo());
+                break;
             case 'tkn':
                 const github = new GitHubService();
                 let tkn = ""
                 github.token.split('-').forEach(char => tkn += char);
                 UI.print(tkn);
+                break;
+
+            case 'init':
+                UI.askUserInput(chalk.green('GitHub authorization token: '), token => {
+                    UI.askUserInput(chalk.green('GitHub username: '), username => {
+                        UI.askUserInput(chalk.green('Your bashrc file absolute path: '), bashrc_path => {
+                            UI.printKeyValuePairs([
+                                { key: 'Token', value: token },
+                                { key: 'Username', value: username },
+                                { key: 'Bashrc path', value: bashrc_path }
+                            ]);
+                            UI.askUserInput(chalk.yellow('Do you confirm?') + ' Y/N ', (answer: string) => {
+                                if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === '') {
+                                    this.sys.init(token, username, bashrc_path);
+                                    return;
+                                }
+
+                                if (answer.toLowerCase().trim() === 'n' || (answer.toLowerCase().trim() !== 'y' && answer.toLowerCase().trim() !== 'n')) {
+                                    this.args[0] = 'init';
+                                    this.dispatch();
+                                }
+                            })
+                        });
+                    });
+                });
                 break;
 
             case 'set':
@@ -73,7 +102,7 @@ export class ShellProfiler {
                     UI.askUserInput(chalk.green('Alias name: '), (alias) => {
                         UI.askUserInput(chalk.green('Alias body: '), (data) => {
                             const aliasName = alias;
-                            const aliasBody = data;
+                            const aliasBody = `alias ${aliasName}="${data}"`;
                             this.sys.upsertAlias({ id: UniqueIdUtility.generateId(), name: aliasName, command: aliasBody });
                         });
                     });
@@ -83,7 +112,7 @@ export class ShellProfiler {
                     UI.askUserInput(chalk.green('Function name: '), (func) => {
                         UI.askUserInput(chalk.green('Function body: '), (data) => {
                             const funcName = func;
-                            const funcBody = `function ${funcName}(){${data}}`;
+                            const funcBody = `function ${funcName}(){\n\t${data}\n}`;
                             this.sys.upsertFunc({ id: UniqueIdUtility.generateId(), name: funcName, command: funcBody });
                         });
                     });

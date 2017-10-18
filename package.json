@@ -9,14 +9,15 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "rxjs": "5.4.3",
         "chalk": "2.1.0",
         "request": "2.83.0",
-        "rxjs": "^5.4.3",
         "typescript": "2.5.2"
     },
     "devDependencies": {
-        "@types/chalk": "0.4.31",
+        "@types/rx": "4.1.1",
         "@types/node": "8.0.41",
+        "@types/chalk": "0.4.31",
         "@types/request": "2.0.6"
     }
 }

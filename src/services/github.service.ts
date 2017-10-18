@@ -39,7 +39,7 @@ export class GitHubService {
             const data = <any[]>JSON.parse(response['body']);
             const gists: any[] = [];
             data.forEach(gist => {
-                if (gist.description === GENERAL.gistDesc) {
+                if (gist.description === GENERAL.gistDescription) {
                     gists.push(gist);
                 }
             });
@@ -124,7 +124,7 @@ export class GitHubService {
         }
 
         const body = {
-            description: GENERAL.gistDesc,
+            description: GENERAL.gistDescription,
             public: true,
             files: {
                 [this.gistName]: {

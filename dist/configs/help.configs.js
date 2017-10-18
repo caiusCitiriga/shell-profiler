@@ -1,24 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const chalk = require("chalk");
 exports.HELP = [
     {
+        command: 'init',
+        options: 'Interactive ShellProfiler core files initailization\n',
+    },
+    {
         command: 'set',
-        options: '--token:tkn, --username:usr',
+        options: `Sets the GitHub token or username.\n${chalk.magenta('Options: [--token:tkn_value, --username:usr_value]')}\n`,
     },
     {
         command: 'new',
-        options: '--alias, --func'
-    },
-    {
-        command: 'delete',
-        options: '--alias, --func'
+        options: `Creates a new alias or function. In a interactive mode\n${chalk.magenta('Options: [--alias, --func]')}\n`
     },
     {
         command: 'edit',
-        options: '--alias, --func'
+        options: `Edits an alias or function.\n${chalk.magenta('Options: [--alias, --func]')}\n`
     },
     {
-        command: '<alias_name | func_name>',
-        options: 'executes the given command. All the "natural command options can be passed"'
+        command: 'delete',
+        options: `Deletes an alias or a function.\n${chalk.magenta('Options: [--alias, --func]')}\n`
     }
 ];
