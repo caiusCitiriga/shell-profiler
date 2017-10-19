@@ -15,6 +15,9 @@ const rmdir_recursive_service_1 = require("./rmdir-recursive.service");
 const persisance_service_1 = require("./persisance.service");
 const persistance_item_type_enum_1 = require("../enums/persistance-item-type.enum");
 class SystemService {
+    get isWindows() {
+        return os.platform() === 'win32' ? true : false;
+    }
     get aliases() {
         const result = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
         return !result.aliases ? [] : result.aliases.sort((a, b) => a.name.length - b.name.length);
@@ -47,8 +50,7 @@ class SystemService {
         //  Set the sourcing of the shell_profiler bashrc on the main bashrc file 
         let source_path = '';
         let usrBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
-        if (os.platform() === 'win32') {
-            console.log(chalk.yellow('Converting path to UNIX-like for sourcing.'));
+        if (this.isWindows) {
             const username_folder = os.userInfo().username;
             source_path = `/c/Users/${username_folder}/${general_configs_1.GENERAL.profilerDataDirectory}/${general_configs_1.GENERAL.profilerBashFile}`;
         }

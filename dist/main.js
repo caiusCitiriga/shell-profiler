@@ -31,6 +31,9 @@ class ShellProfiler {
         let acceptedOptions;
         let extractionResult;
         switch (this.args[0]) {
+            case 'prompt':
+                ui_service_1.UI.askUserInput('Test question: ');
+                break;
             //  TODO: Remove in production
             case 'tkn':
                 const github = new github_service_1.GitHubService();

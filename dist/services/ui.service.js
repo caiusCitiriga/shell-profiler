@@ -4,6 +4,7 @@ require("rxjs/add/observable/of");
 const BehaviorSubject_1 = require("rxjs/BehaviorSubject");
 const chalk = require("chalk");
 const process = require("process");
+const readline = require("readline");
 class UI {
     static get $userInput() {
         return UI._$userInput.asObservable();
@@ -19,19 +20,28 @@ class UI {
         });
     }
     static askUserInput(question, callback) {
-        const __this = this;
-        const stdin = process.stdin;
-        const stdout = process.stdout;
-        stdin.resume();
-        stdout.write(question);
-        stdin.once('data', (data) => {
-            data = data.toString().trim();
-            stdin.pause();
-            __this._$userInput.next(data);
-            if (callback) {
-                callback(data);
-            }
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
         });
+        rl.question(question, answer => {
+            rl.close();
+        });
+        // const __this = this;
+        // const stdin = process.stdin;
+        // const stdout = process.stdout;
+        // if (stdin.isPaused()) {
+        //     stdin.resume();
+        // }
+        // stdout.write(question);
+        // stdin.once('data', (data) => {
+        //     data = data.toString().trim();
+        //     stdin.pause();
+        //     __this._$userInput.next(data);
+        //     if (callback) {
+        //         callback(data);
+        //     }
+        // });
     }
     static print(string) {
         console.log(chalk.gray(`${string}`));

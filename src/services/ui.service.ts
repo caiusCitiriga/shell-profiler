@@ -26,23 +26,35 @@ export class UI {
     }
 
     public static askUserInput(question: string, callback?: (data: any) => void): void {
-        const __this = this;
-        const stdin = process.stdin;
-        const stdout = process.stdout;
-
-        stdin.resume();
-        stdout.write(question);
-
-        stdin.once('data', (data) => {
-            data = data.toString().trim();
-            stdin.pause();
-
-            __this._$userInput.next(data);
-
-            if (callback) {
-                callback(data);
-            }
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
         });
+
+        rl.question(question, answer => {
+            rl.close();
+        });
+
+        // const __this = this;
+        // const stdin = process.stdin;
+        // const stdout = process.stdout;
+
+        // if (stdin.isPaused()) {
+        //     stdin.resume();
+        // }
+
+        // stdout.write(question);
+
+        // stdin.once('data', (data) => {
+        //     data = data.toString().trim();
+        //     stdin.pause();
+
+        //     __this._$userInput.next(data);
+
+        //     if (callback) {
+        //         callback(data);
+        //     }
+        // });
     }
 
     public static print(string: string) {

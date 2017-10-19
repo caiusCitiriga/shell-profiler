@@ -21,6 +21,10 @@ import { PersistanceItemType } from '../enums/persistance-item-type.enum';
 
 export class SystemService {
 
+    public get isWindows(): boolean {
+        return os.platform() === 'win32' ? true : false;
+    }
+
     public get aliases(): ProfilerItem[] {
         const result = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData));
         return !result.aliases ? [] : result.aliases.sort((a, b) => a.name.length - b.name.length);
@@ -31,7 +35,7 @@ export class SystemService {
         return !result.functions ? [] : result.functions.sort((a, b) => a.name.length - b.name.length);
     }
 
-    public help() {
+    public help(): void {
         const set: any = [];
         HELP.forEach(h => {
             set.push({ key: h.command, value: h.options });
@@ -40,7 +44,7 @@ export class SystemService {
         UI.printKeyValuePairs(set);
     }
 
-    public init(token: string, username: string, usrBashrcPath: string) {
+    public init(token: string, username: string, usrBashrcPath: string): void {
         if (!fs.existsSync(usrBashrcPath)) {
             console.log();
             UI.error('The path provided for the bashrc file is not valid.');
@@ -61,9 +65,7 @@ export class SystemService {
         let source_path = '';
         let usrBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
 
-        if (os.platform() === 'win32') {
-            console.log(chalk.yellow('Converting path to UNIX-like for sourcing.'));
-
+        if (this.isWindows) {
             const username_folder = os.userInfo().username;
             source_path = `/c/Users/${username_folder}/${GENERAL.profilerDataDirectory}/${GENERAL.profilerBashFile}`
         } else {

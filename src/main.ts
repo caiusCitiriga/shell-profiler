@@ -47,6 +47,9 @@ export class ShellProfiler {
         let extractionResult: { option: string, value?: string } | null;
 
         switch (this.args[0]) {
+            case 'prompt':
+                UI.askUserInput('Test question: ');
+                break;
             //  TODO: Remove in production
             case 'tkn':
                 const github = new GitHubService();
