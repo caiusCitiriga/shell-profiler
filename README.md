@@ -74,9 +74,7 @@ source /c/Users/caiuscitiriga/.bash_profile
 ```
 
 This is because it's using the Node's ```os.userInfo().username``` to retrieve your username.  
-For some reason Node thinks that the user is the second one, instead of the first one. It can be annoying but the fix is pretty simple. Open your .bashrc file inside your right user folder, search for the SP source line and change the username with the right one.  
-
-**Just remember to perform this edit each time you'll run the ```init``` command**  
+For some reason Node thinks that the user is the second one, instead of the first one.
 **SP** will ask you if you're in domain whenever it will detect that you run the ```init``` command in **Windows**. If you will say **yes** it will ask you for the right user folder (watch the casing).
 
 ---
