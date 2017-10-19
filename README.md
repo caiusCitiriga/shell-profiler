@@ -74,7 +74,7 @@ source /c/Users/caiuscitiriga/.bash_profile
 ```
 
 This is because it's using the Node's ```os.userInfo().username``` to retrieve your username.  
-For some reason Node thinks that the user is the second one, instead of the first one.
+For some reason Node thinks that the user is the second one, instead of the first one.  
 **SP** will ask you if you're in domain whenever it will detect that you run the ```init``` command in **Windows**. If you will say **yes** it will ask you for the right user folder (watch the casing).
 
 ---
