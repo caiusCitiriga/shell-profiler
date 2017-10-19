@@ -16,7 +16,7 @@ class PersistanceService {
         }
         return null;
     }
-    static setItem(itemType, item) {
+    static setItem(itemType, item, skipUpdate) {
         process.chdir(os.homedir());
         if (itemType === persistance_item_type_enum_1.PersistanceItemType.authData) {
             fs.writeFileSync(os.homedir + path.sep + general_configs_1.GENERAL.profilerDataDirectory + path.sep + general_configs_1.GENERAL.profilerAuthFile, JSON.stringify(item), { encoding: 'UTF-8' });

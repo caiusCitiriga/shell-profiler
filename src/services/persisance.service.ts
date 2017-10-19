@@ -23,7 +23,7 @@ export class PersistanceService {
         return null
     }
 
-    public static setItem(itemType: PersistanceItemType, item: ProfilerAuth | ProfilerData | string): void {
+    public static setItem(itemType: PersistanceItemType, item: ProfilerAuth | ProfilerData | string, skipUpdate?: boolean): void {
         process.chdir(os.homedir());
 
         if (itemType === PersistanceItemType.authData) {

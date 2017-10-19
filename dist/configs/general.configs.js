@@ -5,7 +5,7 @@ exports.GENERAL = {
     userBashrcFilePath: 'user_bashrc_path',
     profilerDataDirectory: '.shell_profiler',
     //  GitHub related
-    gistFileExt: 'json',
+    gistFileExt: '.json',
     gistDescription: '@ShellProfilerData',
     //  Profiler main files
     profilerBashFile: 'shell_profiler_bashrc',

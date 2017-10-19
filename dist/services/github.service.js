@@ -1,10 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const Subject_1 = require("rxjs/Subject");
+const Observable_1 = require("rxjs/Observable");
 const request = require("request");
 const general_configs_1 = require("../configs/general.configs");
+const persistance_item_type_enum_1 = require("../enums/persistance-item-type.enum");
+const ui_service_1 = require("./ui.service");
+const persisance_service_1 = require("./persisance.service");
 class GitHubService {
     constructor() {
         this.token = 'eb-3b-a9-52-28-40-ff-9c-2e-1d-d4-26-ce-d2-51-d2-93-e3-33-be';
+        this.userGistsUri = 'https://api.github.com/users/';
+        this.gistsUri = 'https://api.github.com/gists';
+        this._$gistsListResult = new Subject_1.Subject();
+        this._$gistsLoadResult = new Subject_1.Subject();
+        this._$gistCreationResult = new Subject_1.Subject();
         let sanitizedTkn = '';
         this.token.split('-').forEach(c => {
             sanitizedTkn += c;
@@ -12,17 +22,21 @@ class GitHubService {
         this.token = sanitizedTkn;
     }
     listGists() {
+        const githubUsername = this.getGitHubUsername();
+        if (!githubUsername) {
+            return Observable_1.Observable.of({ status: 999, data: null, error: 'missing-username' });
+        }
         request({
             method: 'GET',
             headers: {
                 'user-agent': 'https://github.com/ShellProfiler/shell-profiler'
             },
-            uri: this.userApiUri + this.githubUsername + '/gists'
+            uri: this.userGistsUri + githubUsername + '/gists'
         }, (error, response, body) => {
             if (error) {
                 console.log('There was an error sending the list gists request');
                 console.log(error);
-                return;
+                this._$gistsListResult.next({ status: 999, data: null, error: error });
             }
             const data = JSON.parse(response['body']);
             const gists = [];
@@ -32,31 +46,36 @@ class GitHubService {
                 }
             });
             if (!gists.length) {
-                //  Ask user input here
-                //this.createGist(GENERAL.gistDesc, `${name}.${GENERAL.gistFileExt}`, new ProfilerData());
+                this._$gistsListResult.next({ status: 200, data: null });
                 return;
             }
-            gists.forEach((g, i) => {
-                const filename = Object.keys(g.files)[0].split('.')[0];
-                console.log(`${i}) ${filename}`);
-            });
-            //  If there are multitple valid gists, ask the user which one he wants to use presenting all the gists
+            this._$gistsListResult.next({ status: 200, data: gists });
         });
+        return this._$gistsListResult.asObservable();
     }
     loadGist(url) {
-        request(url, {}, (error, response, body) => {
+        request({
+            method: 'GET',
+            uri: url,
+            headers: {
+                'user-agent': 'https://github.com/ShellProfiler/shell-profiler'
+            }
+        }, (error, response, body) => {
             if (error) {
                 console.log('There was an error loading the gist');
                 console.log(error);
+                this._$gistsLoadResult.next({ status: 999, data: null, error: error });
                 return;
             }
             //  Handle profile load here.
+            this._$gistsLoadResult.next({ status: 200, data: response['body'] });
             return;
         });
+        return this._$gistsLoadResult.asObservable();
     }
-    createGist(desc, filename, profile) {
+    createGist(filename, profile) {
         const body = {
-            description: desc,
+            description: general_configs_1.GENERAL.gistDescription,
             public: true,
             files: {
                 [filename]: {
@@ -66,7 +85,7 @@ class GitHubService {
         };
         request({
             method: 'POST',
-            uri: this.gistsApiUri,
+            uri: this.gistsUri,
             json: true,
             body: body,
             headers: {
@@ -77,22 +96,28 @@ class GitHubService {
             if (error) {
                 console.log('There was an error creating the gist');
                 console.log(error);
+                this._$gistCreationResult.next({ status: 999, data: null, error: error });
+                return;
             }
             if (response.statusCode === 401) {
                 console.log('NOT Authorized');
                 console.log(body.message);
+                this._$gistCreationResult.next({ status: 401, data: null, error: body.message });
                 return;
             }
             if (response.statusCode === 422) {
                 console.log('Unprocessable entity');
                 console.log(body.message);
+                this._$gistCreationResult.next({ status: 422, data: null, error: body.message });
                 return;
             }
             if (response.statusCode === 201) {
-                //  Handle gist successfull creation
-                //  Set the gist name here and save it too
+                console.log('Success!');
+                this._$gistCreationResult.next({ status: 201, data: response['body'] });
+                return;
             }
         });
+        return this._$gistCreationResult.asObservable();
     }
     updateGist(profile) {
         if (!this.gistId) {
@@ -110,7 +135,7 @@ class GitHubService {
         };
         request({
             method: 'PATCH',
-            uri: `${this.gistsApiUri}/${this.gistId}`,
+            uri: `${this.gistsUri}/${this.gistId}`,
             json: true,
             body: body,
             headers: {
@@ -125,6 +150,14 @@ class GitHubService {
             }
             console.log(response.statusCode);
         });
+    }
+    getGitHubUsername() {
+        const githubUsername = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData).githubUsername;
+        if (!githubUsername) {
+            ui_service_1.UI.error('No GitHub username found, please run the set --username command');
+            return null;
+        }
+        return githubUsername;
     }
 }
 exports.GitHubService = GitHubService;

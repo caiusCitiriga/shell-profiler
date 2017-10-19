@@ -59,7 +59,6 @@ class SystemService {
         }
         usrBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${source_path}`;
         fs.writeFileSync(usrBashrcPath, usrBashrcFile, { encoding: 'UTF-8' });
-        ui_service_1.UI.success('ShellProfiler has been successfully initialized!');
     }
     setGithubToken(token) {
         if (!this.checkProfilerDataIntegrity()) {
@@ -161,7 +160,6 @@ class SystemService {
         profilerAuth.githubUsername = null;
         profilerData.aliases = [];
         profilerData.functions = [];
-        profilerData.gistName = null;
         profilerData.userBashrcFilePath = null;
         fs.mkdirSync(general_configs_1.GENERAL.profilerDataDirectory);
         persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.authData, profilerAuth);

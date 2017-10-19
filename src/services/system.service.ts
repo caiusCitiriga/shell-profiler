@@ -74,8 +74,6 @@ export class SystemService {
 
         usrBashrcFile += `\n#ShellProfiler source. Do not remove this.\nsource ${source_path}`;
         fs.writeFileSync(usrBashrcPath, usrBashrcFile, { encoding: 'UTF-8' });
-
-        UI.success('ShellProfiler has been successfully initialized!');
     }
 
     public setGithubToken(token: string) {
@@ -202,7 +200,6 @@ export class SystemService {
 
         profilerData.aliases = [];
         profilerData.functions = [];
-        profilerData.gistName = null;
         profilerData.userBashrcFilePath = null;
 
         fs.mkdirSync(GENERAL.profilerDataDirectory);

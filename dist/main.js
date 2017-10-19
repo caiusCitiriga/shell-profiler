@@ -12,6 +12,7 @@ const UniqueID_service_1 = require("./services/UniqueID.service");
 const persisance_service_1 = require("./services/persisance.service");
 const persistance_item_type_enum_1 = require("./enums/persistance-item-type.enum");
 const item_type_enum_1 = require("./enums/item-type.enum");
+const general_configs_1 = require("./configs/general.configs");
 class ShellProfiler {
     constructor() {
         this.sys = new system_service_1.SystemService();
@@ -31,6 +32,13 @@ class ShellProfiler {
         let acceptedOptions;
         let extractionResult;
         switch (this.args[0]) {
+            //  TODO: Remove in production
+            case 'glist':
+                const gists = this.github.listGists();
+                if (!gists || gists.length) {
+                    ui_service_1.UI.warn('No gists on GitHub');
+                }
+                break;
             //  TODO: Remove in production
             case 'tkn':
                 const github = new github_service_1.GitHubService();
@@ -168,10 +176,10 @@ class ShellProfiler {
                     ui_service_1.UI.askUserInput(chalk.yellow('Do you confirm?') + ' Y/N ', (answer) => {
                         if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === '') {
                             this.sys.init(token, username, bashrc_path, domainUserFolderName);
+                            this.readProfiles();
                             return;
                         }
                         if (answer.toLowerCase().trim() === 'n' || (answer.toLowerCase().trim() !== 'y' && answer.toLowerCase().trim() !== 'n')) {
-                            this.args[0] = 'init';
                             this.dispatch();
                         }
                     });
@@ -220,6 +228,73 @@ class ShellProfiler {
                     const funcBody = `function ${funcName}(){\n\t${data}\n}`;
                     this.sys.upsertFunc({ id: UniqueID_service_1.UniqueIdUtility.generateId(), name: funcName, desc: description, command: funcBody });
                 });
+            });
+        });
+    }
+    readProfiles() {
+        ui_service_1.UI.print('Reading GitHub stored profiles...');
+        this.github
+            .listGists()
+            .subscribe(res => {
+            if (!res.data) {
+                ui_service_1.UI.print('No profiles found. Creating a new one...');
+                this.createProfile();
+            }
+            if (res.data) {
+                ui_service_1.UI.print('At least one profile has been found.');
+                this.selectProfile(res);
+            }
+        });
+    }
+    selectProfile(res) {
+        res.data.forEach((g, i) => {
+            const filename = Object.keys(g.files)[0].split('.')[0];
+            console.log(`${i}) ${chalk.yellow(filename)}`);
+        });
+        ui_service_1.UI.askUserInput('Type the number of the profile you want to use: ', number => {
+            if (!res.data[number]) {
+                ui_service_1.UI.error('Select a valid profile number');
+                return;
+            }
+            ui_service_1.UI.print('Requesting selected profile content from GitHub...');
+            this.loadProfile(res.data[number]);
+        });
+    }
+    loadProfile(profileData) {
+        const profileName = Object.keys(profileData.files)[0].split('.')[0];
+        this.github
+            .loadGist(profileData.url)
+            .subscribe(res => {
+            if (!res.data) {
+                ui_service_1.UI.error('Error while loading profile');
+                console.log(res.error);
+            }
+            ui_service_1.UI.print('Profile content arrived...');
+            ui_service_1.UI.print('Updating profile in use...');
+            const profilerAuth = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData);
+            profilerAuth.gistId = JSON.parse(res.data).id;
+            persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.authData, profilerAuth);
+            const profile = JSON.parse(JSON.parse(res.data).files[profileName + general_configs_1.GENERAL.gistFileExt].content);
+            persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profile);
+            ui_service_1.UI.success('Profile in use has been updated to: ' + profile.name);
+            ui_service_1.UI.success('ShellProfiler initialization completed!');
+        });
+    }
+    createProfile() {
+        ui_service_1.UI.askUserInput('New profile name: ', name => {
+            if (!name) {
+                name = 'DefaultProfile';
+            }
+            const profile = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
+            profile.name = name;
+            this.github
+                .createGist(name + general_configs_1.GENERAL.gistFileExt, profile)
+                .subscribe((res) => {
+                console.log(res);
+                if (res.status === 201) {
+                    ui_service_1.UI.success(`Gist created with name: ${name}`);
+                    persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profile);
+                }
             });
         });
     }

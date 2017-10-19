@@ -4,7 +4,7 @@ export const GENERAL = {
     profilerDataDirectory: '.shell_profiler',
 
     //  GitHub related
-    gistFileExt: 'json',
+    gistFileExt: '.json',
     gistDescription: '@ShellProfilerData',
 
     //  Profiler main files

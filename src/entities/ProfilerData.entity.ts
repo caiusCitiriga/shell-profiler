@@ -4,6 +4,6 @@ export class ProfilerData {
     aliases: ProfilerItem[];
     functions: ProfilerItem[];
 
-    gistName: string | null;
+    name: string | null;
     userBashrcFilePath: string | null;
 }

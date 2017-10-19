@@ -1,18 +1,34 @@
+import { Subject } from 'rxjs/Subject';
+import { Observable } from 'rxjs/Observable';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+
 import * as request from 'request';
 
 import { GENERAL } from '../configs/general.configs';
+
 import { ProfilerData } from '../entities/ProfilerData.entity';
+import { ProfilerAuth } from '../entities/ProfilerAtuh.entity';
+import { LoadGistResult } from '../entities/LoadGistResult.entity';
+import { ListGistsResult } from '../entities/ListGistsResult.entity';
+import { GistCreationResult } from '../entities/GistCreationResult.entity';
+import { PersistanceItemType } from '../enums/persistance-item-type.enum';
+
+import { UI } from './ui.service';
+import { PersistanceService } from './persisance.service';
 
 export class GitHubService {
 
     public token: string = 'eb-3b-a9-52-28-40-ff-9c-2e-1d-d4-26-ce-d2-51-d2-93-e3-33-be';
-    private githubUsername: string;
 
     private gistId: string;
     private gistName: string;
 
-    private userApiUri: string;
-    private gistsApiUri: string;
+    private userGistsUri = 'https://api.github.com/users/';
+    private gistsUri = 'https://api.github.com/gists';
+
+    private _$gistsListResult: Subject<ListGistsResult> = new Subject();
+    private _$gistsLoadResult: Subject<LoadGistResult> = new Subject();
+    private _$gistCreationResult: Subject<GistCreationResult> = new Subject();
 
     public constructor() {
         let sanitizedTkn = '';
@@ -22,18 +38,23 @@ export class GitHubService {
         this.token = sanitizedTkn;
     }
 
-    private listGists() {
+    public listGists(): Observable<ListGistsResult> {
+        const githubUsername = this.getGitHubUsername();
+        if (!githubUsername) {
+            return Observable.of({ status: 999, data: null, error: 'missing-username' });
+        }
+
         request({
             method: 'GET',
             headers: {
                 'user-agent': 'https://github.com/ShellProfiler/shell-profiler'
             },
-            uri: this.userApiUri + this.githubUsername + '/gists'
+            uri: this.userGistsUri + githubUsername + '/gists'
         }, (error, response: any, body) => {
             if (error) {
                 console.log('There was an error sending the list gists request');
                 console.log(error);
-                return;
+                this._$gistsListResult.next({ status: 999, data: null, error: error });
             }
 
             const data = <any[]>JSON.parse(response['body']);
@@ -45,36 +66,42 @@ export class GitHubService {
             });
 
             if (!gists.length) {
-                //  Ask user input here
-                //this.createGist(GENERAL.gistDesc, `${name}.${GENERAL.gistFileExt}`, new ProfilerData());
+                this._$gistsListResult.next({ status: 200, data: null });
                 return;
             }
 
-            gists.forEach((g, i) => {
-                const filename = Object.keys(g.files)[0].split('.')[0];
-                console.log(`${i}) ${filename}`);
-            });
-
-            //  If there are multitple valid gists, ask the user which one he wants to use presenting all the gists
+            this._$gistsListResult.next({ status: 200, data: gists });
         });
+
+        return this._$gistsListResult.asObservable();
     }
 
-    private loadGist(url: string) {
-        request(url, {}, (error, response, body) => {
+    public loadGist(url: string): Observable<LoadGistResult> {
+        request({
+            method: 'GET',
+            uri: url,
+            headers: {
+                'user-agent': 'https://github.com/ShellProfiler/shell-profiler'
+            }
+        }, (error, response, body) => {
             if (error) {
                 console.log('There was an error loading the gist');
                 console.log(error);
+                this._$gistsLoadResult.next({ status: 999, data: null, error: error });
                 return;
             }
 
             //  Handle profile load here.
+            this._$gistsLoadResult.next({ status: 200, data: response['body'] });
             return;
         });
+
+        return this._$gistsLoadResult.asObservable();
     }
 
-    private createGist(desc: string, filename: string, profile: ProfilerData) {
+    public createGist(filename: string, profile: ProfilerData): Observable<any> {
         const body = {
-            description: desc,
+            description: GENERAL.gistDescription,
             public: true,
             files: {
                 [filename]: {
@@ -85,7 +112,7 @@ export class GitHubService {
 
         request({
             method: 'POST',
-            uri: this.gistsApiUri,
+            uri: this.gistsUri,
             json: true,
             body: body,
             headers: {
@@ -96,25 +123,32 @@ export class GitHubService {
             if (error) {
                 console.log('There was an error creating the gist');
                 console.log(error);
+                this._$gistCreationResult.next({ status: 999, data: null, error: error });
+                return;
             }
 
             if (response.statusCode === 401) {
                 console.log('NOT Authorized');
                 console.log(body.message);
+                this._$gistCreationResult.next({ status: 401, data: null, error: body.message });
                 return;
             }
 
             if (response.statusCode === 422) {
                 console.log('Unprocessable entity');
                 console.log(body.message);
+                this._$gistCreationResult.next({ status: 422, data: null, error: body.message });
                 return;
             }
 
             if (response.statusCode === 201) {
-                //  Handle gist successfull creation
-                //  Set the gist name here and save it too
+                console.log('Success!');
+                this._$gistCreationResult.next({ status: 201, data: response['body'] });
+                return;
             }
         });
+
+        return this._$gistCreationResult.asObservable();
     }
 
     private updateGist(profile: ProfilerData) {
@@ -134,7 +168,7 @@ export class GitHubService {
         };
         request({
             method: 'PATCH',
-            uri: `${this.gistsApiUri}/${this.gistId}`,
+            uri: `${this.gistsUri}/${this.gistId}`,
             json: true,
             body: body,
             headers: {
@@ -151,5 +185,14 @@ export class GitHubService {
 
                 console.log(response.statusCode);
             });
+    }
+
+    private getGitHubUsername(): string | null {
+        const githubUsername = (<ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData)).githubUsername;
+        if (!githubUsername) {
+            UI.error('No GitHub username found, please run the set --username command');
+            return null;
+        }
+        return githubUsername;
     }
 }

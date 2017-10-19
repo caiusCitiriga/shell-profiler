@@ -18,6 +18,10 @@ import { PersistanceService } from './services/persisance.service';
 import { ProfilerData } from './entities/ProfilerData.entity';
 import { PersistanceItemType } from './enums/persistance-item-type.enum';
 import { ItemType } from './enums/item-type.enum';
+import { GENERAL } from './configs/general.configs';
+import { GistCreationResult } from './entities/GistCreationResult.entity';
+import { ListGistsResult } from './entities/ListGistsResult.entity';
+import { ProfilerAuth } from './entities/ProfilerAtuh.entity';
 
 export class ShellProfiler {
     private args: string[];
@@ -47,6 +51,13 @@ export class ShellProfiler {
         let extractionResult: { option: string, value?: string } | null;
 
         switch (this.args[0]) {
+            //  TODO: Remove in production
+            case 'glist':
+                const gists: any[] = <any>this.github.listGists();
+                if (!gists || gists.length) {
+                    UI.warn('No gists on GitHub');
+                }
+                break;
             //  TODO: Remove in production
             case 'tkn':
                 const github = new GitHubService();
@@ -203,11 +214,11 @@ export class ShellProfiler {
                     UI.askUserInput(chalk.yellow('Do you confirm?') + ' Y/N ', (answer: string) => {
                         if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === '') {
                             this.sys.init(token, username, bashrc_path, domainUserFolderName);
+                            this.readProfiles();
                             return;
                         }
 
                         if (answer.toLowerCase().trim() === 'n' || (answer.toLowerCase().trim() !== 'y' && answer.toLowerCase().trim() !== 'n')) {
-                            this.args[0] = 'init';
                             this.dispatch();
                         }
                     })
@@ -265,6 +276,83 @@ export class ShellProfiler {
                     this.sys.upsertFunc({ id: UniqueIdUtility.generateId(), name: funcName, desc: description, command: funcBody });
                 });
             });
+        });
+    }
+
+    private readProfiles() {
+        UI.print('Reading GitHub stored profiles...');
+        this.github
+            .listGists()
+            .subscribe(res => {
+                if (!res.data) {
+                    UI.print('No profiles found. Creating a new one...');
+                    this.createProfile();
+                }
+
+                if (res.data) {
+                    UI.print('At least one profile has been found.');
+                    this.selectProfile(res);
+                }
+            });
+    }
+
+    private selectProfile(res: ListGistsResult) {
+        res.data.forEach((g: any, i: number) => {
+            const filename = Object.keys(g.files)[0].split('.')[0];
+            console.log(`${i}) ${chalk.yellow(filename)}`);
+        });
+
+        UI.askUserInput('Type the number of the profile you want to use: ', number => {
+            if (!res.data[number]) {
+                UI.error('Select a valid profile number');
+                return;
+            }
+
+            UI.print('Requesting selected profile content from GitHub...');
+            this.loadProfile(res.data[number]);
+        });
+    }
+
+    private loadProfile(profileData: any) {
+        const profileName = Object.keys(profileData.files)[0].split('.')[0];
+        this.github
+            .loadGist(profileData.url)
+            .subscribe(res => {
+                if (!res.data) {
+                    UI.error('Error while loading profile');
+                    console.log(res.error);
+                }
+
+                UI.print('Profile content arrived...');
+                UI.print('Updating profile in use...');
+                const profilerAuth = <ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData);
+                profilerAuth.gistId = JSON.parse(res.data).id;
+                PersistanceService.setItem(PersistanceItemType.authData, profilerAuth);
+
+                const profile = <ProfilerData>JSON.parse(JSON.parse(res.data).files[profileName + GENERAL.gistFileExt].content);
+                PersistanceService.setItem(PersistanceItemType.profilerData, profile);
+
+                UI.success('Profile in use has been updated to: ' + profile.name);
+                UI.success('ShellProfiler initialization completed!');
+            });
+    }
+
+    private createProfile() {
+        UI.askUserInput('New profile name: ', name => {
+            if (!name) {
+                name = 'DefaultProfile';
+            }
+            const profile = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
+            profile.name = name;
+            this.github
+                .createGist(name + GENERAL.gistFileExt, profile)
+                .subscribe((res: GistCreationResult) => {
+                    console.log(res);
+                    if (res.status === 201) {
+                        UI.success(`Gist created with name: ${name}`);
+                        PersistanceService.setItem(PersistanceItemType.profilerData, profile);
+                    }
+                });
         });
     }
 
