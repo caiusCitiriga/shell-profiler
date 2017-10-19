@@ -4,15 +4,8 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 
 import * as chalk from 'chalk';
 import * as process from 'process';
-import * as readline from 'readline';
 
 export class UI {
-    private static _$userInput: BehaviorSubject<string | null> = new BehaviorSubject(null);
-
-    public static get $userInput(): Observable<string | null> {
-        return UI._$userInput.asObservable();
-    }
-
     public static printKeyValuePairs(set: { key: string, value: string }[], space_char: string = ' ') {
         const longestKeyLen = <number>set.reduce((p, c) => p < c.key.length ? c.key.length : false, 0);
         set.forEach(pair => {
@@ -26,35 +19,24 @@ export class UI {
     }
 
     public static askUserInput(question: string, callback?: (data: any) => void): void {
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
+        const __this = this;
+        const stdin = process.stdin;
+        const stdout = process.stdout;
+
+        if (stdin.isPaused()) {
+            stdin.resume();
+        }
+
+        stdout.write(question);
+
+        stdin.once('data', (data) => {
+            data = data.toString().trim();
+            stdin.pause();
+
+            if (callback) {
+                callback(data);
+            }
         });
-
-        rl.question(question, answer => {
-            rl.close();
-        });
-
-        // const __this = this;
-        // const stdin = process.stdin;
-        // const stdout = process.stdout;
-
-        // if (stdin.isPaused()) {
-        //     stdin.resume();
-        // }
-
-        // stdout.write(question);
-
-        // stdin.once('data', (data) => {
-        //     data = data.toString().trim();
-        //     stdin.pause();
-
-        //     __this._$userInput.next(data);
-
-        //     if (callback) {
-        //         callback(data);
-        //     }
-        // });
     }
 
     public static print(string: string) {

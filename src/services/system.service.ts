@@ -44,7 +44,7 @@ export class SystemService {
         UI.printKeyValuePairs(set);
     }
 
-    public init(token: string, username: string, usrBashrcPath: string): void {
+    public init(token: string, username: string, usrBashrcPath: string, domainUserFolderName?: string): void {
         if (!fs.existsSync(usrBashrcPath)) {
             console.log();
             UI.error('The path provided for the bashrc file is not valid.');
@@ -66,7 +66,7 @@ export class SystemService {
         let usrBashrcFile = fs.readFileSync(usrBashrcPath, { encoding: 'UTF-8' }).toString();
 
         if (this.isWindows) {
-            const username_folder = os.userInfo().username;
+            const username_folder = domainUserFolderName ? domainUserFolderName : os.userInfo().username;
             source_path = `/c/Users/${username_folder}/${GENERAL.profilerDataDirectory}/${GENERAL.profilerBashFile}`
         } else {
             source_path = os.homedir() + path.sep + GENERAL.profilerDataDirectory + path.sep + GENERAL.profilerBashFile;

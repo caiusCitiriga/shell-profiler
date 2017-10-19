@@ -31,9 +31,6 @@ class ShellProfiler {
         let acceptedOptions;
         let extractionResult;
         switch (this.args[0]) {
-            case 'prompt':
-                ui_service_1.UI.askUserInput('Test question: ');
-                break;
             //  TODO: Remove in production
             case 'tkn':
                 const github = new github_service_1.GitHubService();
@@ -42,7 +39,25 @@ class ShellProfiler {
                 ui_service_1.UI.print(tkn);
                 break;
             case 'init':
-                this.handleInitCall();
+                if (this.sys.isWindows) {
+                    ui_service_1.UI.askUserInput(chalk.yellow('WINDOWS DETECTED: Are you part of a Domain? Y/N '), answer => {
+                        if (answer.trim().toLowerCase() === 'y') {
+                            ui_service_1.UI.askUserInput(chalk.yellow('Type your domain user folder name: '), domainUserFolderName => {
+                                this.handleInitCall(domainUserFolderName);
+                            });
+                        }
+                        if (answer.trim().toLowerCase() === 'n') {
+                            this.handleInitCall();
+                        }
+                        if (answer.trim().toLowerCase() !== 'n' && answer.trim().toLowerCase() !== 'y') {
+                            ui_service_1.UI.error('Invalid answer.');
+                            this.dispatch();
+                        }
+                    });
+                }
+                else {
+                    this.handleInitCall();
+                }
                 break;
             case 'stat':
                 if (this.sys.checkProfilerDataIntegrity()) {
@@ -141,7 +156,7 @@ class ShellProfiler {
                 break;
         }
     }
-    handleInitCall() {
+    handleInitCall(domainUserFolderName) {
         ui_service_1.UI.askUserInput(chalk.green('GitHub authorization token: '), token => {
             ui_service_1.UI.askUserInput(chalk.green('GitHub username: '), username => {
                 ui_service_1.UI.askUserInput(chalk.green('Your bashrc file absolute path: '), bashrc_path => {
@@ -152,7 +167,7 @@ class ShellProfiler {
                     ]);
                     ui_service_1.UI.askUserInput(chalk.yellow('Do you confirm?') + ' Y/N ', (answer) => {
                         if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === '') {
-                            this.sys.init(token, username, bashrc_path);
+                            this.sys.init(token, username, bashrc_path, domainUserFolderName);
                             return;
                         }
                         if (answer.toLowerCase().trim() === 'n' || (answer.toLowerCase().trim() !== 'y' && answer.toLowerCase().trim() !== 'n')) {
