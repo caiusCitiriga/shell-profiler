@@ -64,8 +64,8 @@ When setting a **function** that is very complex, right now you will have to do 
 During the **init** command, if the **user** that's logged in belongs to a domain, **SP** won't be able to detect its right User folder. So when it will try to source its core file on your main **.bashrc**, it will point to a non accessible folder.  
 Suppose you're having theese two folders inside your **\Users** folder and you're logged in with the first one:
 
-+ \caiuscitiriga.DOMAIN
-+ \caiuscitiriga
++ C:\Users\caiuscitiriga.DOMAIN
++ C:\Users\caiuscitiriga
 
 When **SP** will open the **.bashrc** file inside \caiuscitiriga.DOMAIN, it will write inside this line:  
 ```sh
