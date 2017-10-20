@@ -273,13 +273,17 @@ class ShellProfiler {
             ui_service_1.UI.print(`${i}) ${chalk.yellow(filename)}`);
         });
         console.log();
-        ui_service_1.UI.askUserInput('Type the number of the profile you want to use: ', number => {
-            if (!res.data[number]) {
+        ui_service_1.UI.askUserInput('Type the number of the profile you want to use or N for a new one: ', choiche => {
+            if (!res.data[choiche] && choiche.toLowerCase().trim() !== 'n') {
                 ui_service_1.UI.error('Select a valid profile number');
                 return;
             }
+            if (choiche.toLowerCase().trim() === 'n') {
+                this.createProfile();
+                return;
+            }
             ui_service_1.UI.print('Requesting selected profile content from GitHub...');
-            this.loadProfile(res.data[number], inInitMode);
+            this.loadProfile(res.data[choiche], inInitMode);
         });
     }
     loadProfile(profileData, inInitMode) {
@@ -289,7 +293,7 @@ class ShellProfiler {
             .subscribe(res => {
             if (!res.data) {
                 ui_service_1.UI.error('Error while loading profile');
-                console.log(res.error);
+                ui_service_1.UI.error(res.error);
             }
             ui_service_1.UI.print('Profile content arrived...');
             ui_service_1.UI.print('Updating profile in use...');
@@ -310,12 +314,15 @@ class ShellProfiler {
                 name = 'DefaultProfile';
             }
             const profile = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
+            //  Set the new name, keep tne paths and reset the arrays
             profile.name = name;
+            profile.aliases = [];
+            profile.functions = [];
             this.github
                 .createGist(name + general_configs_1.GENERAL.gistFileExt, profile)
                 .subscribe((res) => {
-                console.log(res);
                 if (res.status === 201) {
+                    this.sys.setGistId(res.data.id);
                     ui_service_1.UI.success(`Gist created with name: ${name}`);
                     persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profile);
                 }

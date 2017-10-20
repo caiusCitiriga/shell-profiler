@@ -327,14 +327,19 @@ export class ShellProfiler {
         });
         console.log();
 
-        UI.askUserInput('Type the number of the profile you want to use: ', number => {
-            if (!res.data[number]) {
+        UI.askUserInput('Type the number of the profile you want to use or N for a new one: ', choiche => {
+            if (!res.data[choiche] && choiche.toLowerCase().trim() !== 'n') {
                 UI.error('Select a valid profile number');
                 return;
             }
 
+            if (choiche.toLowerCase().trim() === 'n') {
+                this.createProfile();
+                return;
+            }
+
             UI.print('Requesting selected profile content from GitHub...');
-            this.loadProfile(res.data[number], inInitMode);
+            this.loadProfile(res.data[choiche], inInitMode);
         });
     }
 
@@ -345,7 +350,7 @@ export class ShellProfiler {
             .subscribe(res => {
                 if (!res.data) {
                     UI.error('Error while loading profile');
-                    console.log(res.error);
+                    UI.error(res.error);
                 }
 
                 UI.print('Profile content arrived...');
@@ -370,12 +375,17 @@ export class ShellProfiler {
                 name = 'DefaultProfile';
             }
             const profile = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
+
+            //  Set the new name, keep tne paths and reset the arrays
             profile.name = name;
+            profile.aliases = [];
+            profile.functions = [];
+
             this.github
                 .createGist(name + GENERAL.gistFileExt, profile)
                 .subscribe((res: GistCreationResult) => {
-                    console.log(res);
                     if (res.status === 201) {
+                        this.sys.setGistId(res.data.id);
                         UI.success(`Gist created with name: ${name}`);
                         PersistanceService.setItem(PersistanceItemType.profilerData, profile);
                     }

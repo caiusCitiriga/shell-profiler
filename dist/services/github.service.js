@@ -14,6 +14,7 @@ class GitHubService {
         this.gistsUri = 'https://api.github.com/gists';
         this._$gistsListResult = new Subject_1.Subject();
         this._$gistsLoadResult = new Subject_1.Subject();
+        this._$gistUpdateResult = new Subject_1.Subject();
         this._$gistCreationResult = new Subject_1.Subject();
         let sanitizedTkn = '';
         this.token.split('-').forEach(c => {
@@ -119,23 +120,19 @@ class GitHubService {
         });
         return this._$gistCreationResult.asObservable();
     }
-    updateGist(profile) {
-        if (!this.gistId) {
-            console.log('The gist ID is missing. This might mean that you have to create a new gist or take one available on GitHub');
-            return;
-        }
+    updateGist(profile, gistId) {
         const body = {
             description: general_configs_1.GENERAL.gistDescription,
             public: true,
             files: {
-                [this.gistName]: {
+                [profile.name + general_configs_1.GENERAL.gistFileExt]: {
                     content: JSON.stringify(profile)
                 }
             }
         };
         request({
             method: 'PATCH',
-            uri: `${this.gistsUri}/${this.gistId}`,
+            uri: `${this.gistsUri}/${gistId}`,
             json: true,
             body: body,
             headers: {
@@ -146,10 +143,13 @@ class GitHubService {
             if (error) {
                 console.log('Error while updating gist');
                 console.log(error);
+                this._$gistsLoadResult.next({ status: 999, data: null, error: error });
                 return;
             }
             console.log(response.statusCode);
+            this._$gistsLoadResult.next({ status: 200, data: response['body'] });
         });
+        return this._$gistsLoadResult.asObservable();
     }
     getGitHubUsername() {
         const githubUsername = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData).githubUsername;

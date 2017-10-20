@@ -18,8 +18,11 @@ import { UI } from './ui.service';
 import { RmdirRecursive } from './rmdir-recursive.service';
 import { PersistanceService } from './persisance.service';
 import { PersistanceItemType } from '../enums/persistance-item-type.enum';
+import { GitHubService } from './github.service';
 
 export class SystemService {
+
+    private github: GitHubService;
 
     public get isWindows(): boolean {
         return os.platform() === 'win32' ? true : false;
@@ -38,6 +41,14 @@ export class SystemService {
     public get profileName(): string | null {
         const result = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData))
         return result.name;
+    }
+
+    public get gistId(): string | null {
+        return (<ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData)).gistId;
+    }
+
+    public constructor() {
+        this.github = new GitHubService();
     }
 
     public help(): void {
@@ -113,6 +124,18 @@ export class SystemService {
         profilerData.userBashrcFilePath = filePath;
 
         PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
+        this.updateGist(profilerData);
+    }
+
+    public setGistId(id: string) {
+        if (!this.checkProfilerDataIntegrity()) {
+            this.initializeCoreFiles();
+        }
+
+        const auth: ProfilerAuth = <ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData);
+        auth.gistId = id;
+
+        PersistanceService.setItem(PersistanceItemType.authData, auth);
     }
 
     public upsertAlias(alias: ProfilerItem) {
@@ -138,6 +161,7 @@ export class SystemService {
         }
 
         PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
+        this.updateGist(profilerData);
 
         console.log();
         UI.success(updated ? 'Alias updated successfully!' : 'Alias added successfully!');
@@ -166,6 +190,7 @@ export class SystemService {
         }
 
         PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
+        this.updateGist(profilerData);
 
         console.log();
         UI.success(updated ? 'Function updated successfully!' : 'Function added successfully!');
@@ -178,6 +203,7 @@ export class SystemService {
             profilerData.aliases = profilerData.aliases.filter(a => a.id !== id);
 
             PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
+            this.updateGist(profilerData);
         }
 
         if (type === ItemType.function) {
@@ -185,12 +211,22 @@ export class SystemService {
             profilerData.functions = profilerData.functions.filter(f => f.id !== id);
 
             PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
+            this.updateGist(profilerData);
         }
         if (type === ItemType.export) { }
     }
 
     public checkProfilerDataIntegrity() {
         return PersistanceService.checkFilesIntegrity();
+    }
+
+    private updateGist(profilerData: ProfilerData) {
+        const gistId = (<ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData)).gistId;
+        if (gistId) {
+            this.github.updateGist(profilerData, gistId);
+        } else {
+            UI.warn('Gist ID not found, please set it with the set --gist-id command or run the init command');
+        }
     }
 
     private initializeCoreFiles() {

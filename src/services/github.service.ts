@@ -6,12 +6,14 @@ import * as request from 'request';
 
 import { GENERAL } from '../configs/general.configs';
 
+import { PersistanceItemType } from '../enums/persistance-item-type.enum';
+
 import { ProfilerData } from '../entities/ProfilerData.entity';
 import { ProfilerAuth } from '../entities/ProfilerAtuh.entity';
 import { LoadGistResult } from '../entities/LoadGistResult.entity';
 import { ListGistsResult } from '../entities/ListGistsResult.entity';
+import { UpdateGistResult } from '../entities/UpdateGistResult.entity';
 import { GistCreationResult } from '../entities/GistCreationResult.entity';
-import { PersistanceItemType } from '../enums/persistance-item-type.enum';
 
 import { UI } from './ui.service';
 import { PersistanceService } from './persisance.service';
@@ -20,14 +22,12 @@ export class GitHubService {
 
     public token: string = 'eb-3b-a9-52-28-40-ff-9c-2e-1d-d4-26-ce-d2-51-d2-93-e3-33-be';
 
-    private gistId: string;
-    private gistName: string;
-
     private userGistsUri = 'https://api.github.com/users/';
     private gistsUri = 'https://api.github.com/gists';
 
     private _$gistsListResult: Subject<ListGistsResult> = new Subject();
     private _$gistsLoadResult: Subject<LoadGistResult> = new Subject();
+    private _$gistUpdateResult: Subject<UpdateGistResult> = new Subject();
     private _$gistCreationResult: Subject<GistCreationResult> = new Subject();
 
     public constructor() {
@@ -151,24 +151,19 @@ export class GitHubService {
         return this._$gistCreationResult.asObservable();
     }
 
-    private updateGist(profile: ProfilerData) {
-        if (!this.gistId) {
-            console.log('The gist ID is missing. This might mean that you have to create a new gist or take one available on GitHub');
-            return;
-        }
-
+    public updateGist(profile: ProfilerData, gistId: string): Observable<LoadGistResult> {
         const body = {
             description: GENERAL.gistDescription,
             public: true,
             files: {
-                [this.gistName]: {
+                [<string>profile.name + GENERAL.gistFileExt]: {
                     content: JSON.stringify(profile)
                 }
             }
         };
         request({
             method: 'PATCH',
-            uri: `${this.gistsUri}/${this.gistId}`,
+            uri: `${this.gistsUri}/${gistId}`,
             json: true,
             body: body,
             headers: {
@@ -180,11 +175,15 @@ export class GitHubService {
                 if (error) {
                     console.log('Error while updating gist');
                     console.log(error);
+                    this._$gistsLoadResult.next({ status: 999, data: null, error: error });
                     return;
                 }
 
                 console.log(response.statusCode);
+                this._$gistsLoadResult.next({ status: 200, data: response['body'] });
             });
+
+        return this._$gistsLoadResult.asObservable();
     }
 
     private getGitHubUsername(): string | null {

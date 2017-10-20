@@ -14,6 +14,7 @@ const ui_service_1 = require("./ui.service");
 const rmdir_recursive_service_1 = require("./rmdir-recursive.service");
 const persisance_service_1 = require("./persisance.service");
 const persistance_item_type_enum_1 = require("../enums/persistance-item-type.enum");
+const github_service_1 = require("./github.service");
 class SystemService {
     get isWindows() {
         return os.platform() === 'win32' ? true : false;
@@ -29,6 +30,12 @@ class SystemService {
     get profileName() {
         const result = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
         return result.name;
+    }
+    get gistId() {
+        return persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData).gistId;
+    }
+    constructor() {
+        this.github = new github_service_1.GitHubService();
     }
     help() {
         const set = [];
@@ -88,6 +95,15 @@ class SystemService {
         const profilerData = JSON.parse(fs.readFileSync(general_configs_1.GENERAL.profilerDataFile, { encoding: 'UTF-8' }));
         profilerData.userBashrcFilePath = filePath;
         persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profilerData);
+        this.updateGist(profilerData);
+    }
+    setGistId(id) {
+        if (!this.checkProfilerDataIntegrity()) {
+            this.initializeCoreFiles();
+        }
+        const auth = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData);
+        auth.gistId = id;
+        persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.authData, auth);
     }
     upsertAlias(alias) {
         if (!this.checkProfilerDataIntegrity()) {
@@ -110,6 +126,7 @@ class SystemService {
             profilerData.aliases.push(alias);
         }
         persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profilerData);
+        this.updateGist(profilerData);
         console.log();
         ui_service_1.UI.success(updated ? 'Alias updated successfully!' : 'Alias added successfully!');
         ui_service_1.UI.warn('Remember that you have to restart your shell in order to use this alias');
@@ -135,6 +152,7 @@ class SystemService {
             profilerData.functions.push(func);
         }
         persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profilerData);
+        this.updateGist(profilerData);
         console.log();
         ui_service_1.UI.success(updated ? 'Function updated successfully!' : 'Function added successfully!');
         ui_service_1.UI.warn('Remember that you have to restart your shell in order to use this function');
@@ -144,16 +162,27 @@ class SystemService {
             const profilerData = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
             profilerData.aliases = profilerData.aliases.filter(a => a.id !== id);
             persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profilerData);
+            this.updateGist(profilerData);
         }
         if (type === item_type_enum_1.ItemType.function) {
             const profilerData = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
             profilerData.functions = profilerData.functions.filter(f => f.id !== id);
             persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profilerData);
+            this.updateGist(profilerData);
         }
         if (type === item_type_enum_1.ItemType.export) { }
     }
     checkProfilerDataIntegrity() {
         return persisance_service_1.PersistanceService.checkFilesIntegrity();
+    }
+    updateGist(profilerData) {
+        const gistId = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData).gistId;
+        if (gistId) {
+            this.github.updateGist(profilerData, gistId);
+        }
+        else {
+            ui_service_1.UI.warn('Gist ID not found, please set it with the set --gist-id command or run the init command');
+        }
     }
     initializeCoreFiles() {
         console.log(chalk.yellow('Initializing ShellProfiler...'));
