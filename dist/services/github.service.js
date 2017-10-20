@@ -15,7 +15,6 @@ class GitHubService {
         this._$gistsLoadResult = new Subject_1.Subject();
         this._$gistUpdateResult = new Subject_1.Subject();
         this._$gistCreationResult = new Subject_1.Subject();
-        this.token = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData).githubToken;
     }
     listGists() {
         const githubUsername = this.getGitHubUsername();
@@ -70,6 +69,7 @@ class GitHubService {
         return this._$gistsLoadResult.asObservable();
     }
     createGist(filename, profile) {
+        this.token = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData).githubToken;
         const body = {
             description: general_configs_1.GENERAL.gistDescription,
             public: true,
@@ -116,6 +116,7 @@ class GitHubService {
         return this._$gistCreationResult.asObservable();
     }
     updateGist(profile, gistId) {
+        this.token = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData).githubToken;
         const body = {
             description: general_configs_1.GENERAL.gistDescription,
             public: true,
