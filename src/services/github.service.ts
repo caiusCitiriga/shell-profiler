@@ -30,10 +30,6 @@ export class GitHubService {
     private _$gistUpdateResult: Subject<UpdateGistResult> = new Subject();
     private _$gistCreationResult: Subject<GistCreationResult> = new Subject();
 
-    public constructor() {
-        this.token = <string>(<ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData)).githubToken;
-    }
-
     public listGists(): Observable<ListGistsResult> {
         const githubUsername = this.getGitHubUsername();
         if (!githubUsername) {
@@ -96,6 +92,8 @@ export class GitHubService {
     }
 
     public createGist(filename: string, profile: ProfilerData): Observable<any> {
+        this.token = <string>(<ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData)).githubToken;
+
         const body = {
             description: GENERAL.gistDescription,
             public: true,
@@ -148,6 +146,8 @@ export class GitHubService {
     }
 
     public updateGist(profile: ProfilerData, gistId: string): Observable<LoadGistResult> {
+        this.token = <string>(<ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData)).githubToken;
+
         const body = {
             description: GENERAL.gistDescription,
             public: true,
