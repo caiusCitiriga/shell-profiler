@@ -18,7 +18,7 @@ export class UI {
         });
     }
 
-    public static askUserInput(question: string, callback?: (data: any) => void): void {
+    public static askUserInput(question: string, callback?: (data: any) => void, surroundInNewLines?: boolean): void {
         const __this = this;
         const stdin = process.stdin;
         const stdout = process.stdout;
@@ -27,7 +27,13 @@ export class UI {
             stdin.resume();
         }
 
+        if (surroundInNewLines) {
+            console.log();
+        }
         stdout.write(question);
+        if (surroundInNewLines) {
+            console.log();
+        }
 
         stdin.once('data', (data) => {
             data = data.toString().trim();
@@ -39,20 +45,44 @@ export class UI {
         });
     }
 
-    public static print(string: string) {
+    public static print(string: string, surroundInNewlines?: boolean) {
+        if (surroundInNewlines) {
+            console.log();
+        }
         console.log(chalk.gray(`${string}`));
+        if (surroundInNewlines) {
+            console.log();
+        }
     }
 
-    public static success(string: string) {
+    public static success(string: string, surroundInNewlines?: boolean) {
+        if (surroundInNewlines) {
+            console.log();
+        }
         console.log(chalk.green(`\u2713 ${string}`));
+        if (surroundInNewlines) {
+            console.log();
+        }
     }
 
-    public static warn(string: string) {
+    public static warn(string: string, surroundInNewlines?: boolean) {
+        if (surroundInNewlines) {
+            console.log();
+        }
         console.log(chalk.yellow(`WARN: ${string}`));
+        if (surroundInNewlines) {
+            console.log();
+        }
     }
 
-    public static error(string: string) {
+    public static error(string: string, surroundInNewlines?: boolean) {
+        if (surroundInNewlines) {
+            console.log();
+        }
         console.log(chalk.red(`ERROR: ${string} \n`));
+        if (surroundInNewlines) {
+            console.log();
+        }
     }
 
     public static printTableExperimental(maxLen: number, currLen: number) {

@@ -26,6 +26,10 @@ class SystemService {
         const result = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
         return !result.functions ? [] : result.functions.sort((a, b) => a.name.length - b.name.length);
     }
+    get profileName() {
+        const result = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData);
+        return result.name;
+    }
     help() {
         const set = [];
         help_configs_1.HELP.forEach(h => {

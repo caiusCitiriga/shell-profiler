@@ -14,14 +14,20 @@ class UI {
             console.log(`- ${chalk.yellow(pair.key)}: ${spaces + pair.value}`);
         });
     }
-    static askUserInput(question, callback) {
+    static askUserInput(question, callback, surroundInNewLines) {
         const __this = this;
         const stdin = process.stdin;
         const stdout = process.stdout;
         if (stdin.isPaused()) {
             stdin.resume();
         }
+        if (surroundInNewLines) {
+            console.log();
+        }
         stdout.write(question);
+        if (surroundInNewLines) {
+            console.log();
+        }
         stdin.once('data', (data) => {
             data = data.toString().trim();
             stdin.pause();
@@ -30,17 +36,41 @@ class UI {
             }
         });
     }
-    static print(string) {
+    static print(string, surroundInNewlines) {
+        if (surroundInNewlines) {
+            console.log();
+        }
         console.log(chalk.gray(`${string}`));
+        if (surroundInNewlines) {
+            console.log();
+        }
     }
-    static success(string) {
+    static success(string, surroundInNewlines) {
+        if (surroundInNewlines) {
+            console.log();
+        }
         console.log(chalk.green(`\u2713 ${string}`));
+        if (surroundInNewlines) {
+            console.log();
+        }
     }
-    static warn(string) {
+    static warn(string, surroundInNewlines) {
+        if (surroundInNewlines) {
+            console.log();
+        }
         console.log(chalk.yellow(`WARN: ${string}`));
+        if (surroundInNewlines) {
+            console.log();
+        }
     }
-    static error(string) {
+    static error(string, surroundInNewlines) {
+        if (surroundInNewlines) {
+            console.log();
+        }
         console.log(chalk.red(`ERROR: ${string} \n`));
+        if (surroundInNewlines) {
+            console.log();
+        }
     }
     static printTableExperimental(maxLen, currLen) {
         let spaces = '';

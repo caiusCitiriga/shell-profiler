@@ -74,11 +74,11 @@ class ShellProfiler {
                 }
                 ui_service_1.UI.error('There are issues with your configuration. Run the init script to make ShellProfiler happy again');
                 break;
-            case 'list':
+            case 'ls':
                 if (!this.checkExtraOptionsPresence([1])) {
                     return;
                 }
-                acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
+                acceptedOptions = [{ option: '--alias' }, { option: '--func' }, { option: '--profile' }];
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
                 if (!extractionResult) {
                     return;
@@ -89,14 +89,18 @@ class ShellProfiler {
                 if (extractionResult.option.indexOf('--func') !== -1) {
                     this.handleFunctionListCall();
                 }
+                if (extractionResult.option.indexOf('--profile') !== -1) {
+                    this.handleGetProfileNameCall();
+                }
                 break;
             case 'set':
                 if (!this.checkExtraOptionsPresence([1])) {
                     return;
                 }
                 acceptedOptions = [
-                    { option: '--alias' },
                     { option: '--func' },
+                    { option: '--alias' },
+                    { option: '--profile' },
                     { option: '--token', mustHaveValue: true },
                     { option: '--username', mustHaveValue: true }
                 ];
@@ -104,17 +108,20 @@ class ShellProfiler {
                 if (!extractionResult) {
                     return;
                 }
+                if (extractionResult.option === '--func') {
+                    this.handleFunctionSetCall();
+                }
+                if (extractionResult.option === '--alias') {
+                    this.handleAliasSetCall();
+                }
+                if (extractionResult.option === '--profile') {
+                    this.handleProfileSetCall();
+                }
                 if (extractionResult.option.indexOf('--token') !== -1 && extractionResult.value) {
                     this.handleTokenSetCall(extractionResult.value);
                 }
                 if (extractionResult.option.indexOf('--username') !== -1 && extractionResult.value) {
                     this.handleUsernameSetCall(extractionResult.value);
-                }
-                if (extractionResult.option === '--alias') {
-                    this.handleAliasSetCall();
-                }
-                if (extractionResult.option === '--func') {
-                    this.handleFunctionSetCall();
                 }
                 break;
             case 'del':
@@ -176,7 +183,7 @@ class ShellProfiler {
                     ui_service_1.UI.askUserInput(chalk.yellow('Do you confirm?') + ' Y/N ', (answer) => {
                         if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === '') {
                             this.sys.init(token, username, bashrc_path, domainUserFolderName);
-                            this.readProfiles();
+                            this.readProfiles(true);
                             return;
                         }
                         if (answer.toLowerCase().trim() === 'n' || (answer.toLowerCase().trim() !== 'y' && answer.toLowerCase().trim() !== 'n')) {
@@ -202,6 +209,14 @@ class ShellProfiler {
             list.push({ key: func.name, value: func.desc });
         });
         ui_service_1.UI.printKeyValuePairs(list);
+    }
+    handleGetProfileNameCall() {
+        const result = this.sys.profileName;
+        if (!result) {
+            ui_service_1.UI.error('No profile name set. Set it with set --profile:name');
+            return;
+        }
+        ui_service_1.UI.print('Profile in use: ' + chalk.yellow(result), true);
     }
     handleTokenSetCall(extractionResultValue) {
         this.sys.setGithubToken(extractionResultValue);
@@ -231,14 +246,19 @@ class ShellProfiler {
             });
         });
     }
-    readProfiles() {
+    handleProfileSetCall() {
+        this.readProfiles();
+    }
+    readProfiles(inInitMode) {
         ui_service_1.UI.print('Reading GitHub stored profiles...');
         this.github
             .listGists()
             .subscribe(res => {
             if (!res.data) {
                 ui_service_1.UI.print('No profiles found. Creating a new one...');
-                this.createProfile();
+                if (inInitMode) {
+                    this.createProfile();
+                }
             }
             if (res.data) {
                 ui_service_1.UI.print('At least one profile has been found.');
@@ -246,21 +266,23 @@ class ShellProfiler {
             }
         });
     }
-    selectProfile(res) {
+    selectProfile(res, inInitMode) {
+        console.log();
         res.data.forEach((g, i) => {
             const filename = Object.keys(g.files)[0].split('.')[0];
-            console.log(`${i}) ${chalk.yellow(filename)}`);
+            ui_service_1.UI.print(`${i}) ${chalk.yellow(filename)}`);
         });
+        console.log();
         ui_service_1.UI.askUserInput('Type the number of the profile you want to use: ', number => {
             if (!res.data[number]) {
                 ui_service_1.UI.error('Select a valid profile number');
                 return;
             }
             ui_service_1.UI.print('Requesting selected profile content from GitHub...');
-            this.loadProfile(res.data[number]);
+            this.loadProfile(res.data[number], inInitMode);
         });
     }
-    loadProfile(profileData) {
+    loadProfile(profileData, inInitMode) {
         const profileName = Object.keys(profileData.files)[0].split('.')[0];
         this.github
             .loadGist(profileData.url)
@@ -276,8 +298,10 @@ class ShellProfiler {
             persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.authData, profilerAuth);
             const profile = JSON.parse(JSON.parse(res.data).files[profileName + general_configs_1.GENERAL.gistFileExt].content);
             persisance_service_1.PersistanceService.setItem(persistance_item_type_enum_1.PersistanceItemType.profilerData, profile);
-            ui_service_1.UI.success('Profile in use has been updated to: ' + profile.name);
-            ui_service_1.UI.success('ShellProfiler initialization completed!');
+            ui_service_1.UI.success('Profile in use has been updated to: ' + chalk.yellow(profile.name), true);
+            if (inInitMode) {
+                ui_service_1.UI.success('ShellProfiler initialization completed!');
+            }
         });
     }
     createProfile() {

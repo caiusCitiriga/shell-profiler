@@ -98,12 +98,12 @@ export class ShellProfiler {
                 UI.error('There are issues with your configuration. Run the init script to make ShellProfiler happy again');
                 break;
 
-            case 'list':
+            case 'ls':
                 if (!this.checkExtraOptionsPresence([1])) {
                     return;
                 }
 
-                acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
+                acceptedOptions = [{ option: '--alias' }, { option: '--func' }, { option: '--profile' }];
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
                 if (!extractionResult) {
                     return;
@@ -114,6 +114,9 @@ export class ShellProfiler {
                 if (extractionResult.option.indexOf('--func') !== -1) {
                     this.handleFunctionListCall();
                 }
+                if (extractionResult.option.indexOf('--profile') !== -1) {
+                    this.handleGetProfileNameCall();
+                }
                 break;
 
             case 'set':
@@ -122,8 +125,9 @@ export class ShellProfiler {
                 }
 
                 acceptedOptions = [
-                    { option: '--alias' },
                     { option: '--func' },
+                    { option: '--alias' },
+                    { option: '--profile' },
                     { option: '--token', mustHaveValue: true },
                     { option: '--username', mustHaveValue: true }
                 ];
@@ -132,17 +136,20 @@ export class ShellProfiler {
                 if (!extractionResult) {
                     return;
                 }
+                if (extractionResult.option === '--func') {
+                    this.handleFunctionSetCall();
+                }
+                if (extractionResult.option === '--alias') {
+                    this.handleAliasSetCall();
+                }
+                if (extractionResult.option === '--profile') {
+                    this.handleProfileSetCall();
+                }
                 if (extractionResult.option.indexOf('--token') !== -1 && extractionResult.value) {
                     this.handleTokenSetCall(extractionResult.value);
                 }
                 if (extractionResult.option.indexOf('--username') !== -1 && extractionResult.value) {
                     this.handleUsernameSetCall(extractionResult.value);
-                }
-                if (extractionResult.option === '--alias') {
-                    this.handleAliasSetCall();
-                }
-                if (extractionResult.option === '--func') {
-                    this.handleFunctionSetCall();
                 }
                 break;
 
@@ -214,7 +221,7 @@ export class ShellProfiler {
                     UI.askUserInput(chalk.yellow('Do you confirm?') + ' Y/N ', (answer: string) => {
                         if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === '') {
                             this.sys.init(token, username, bashrc_path, domainUserFolderName);
-                            this.readProfiles();
+                            this.readProfiles(true);
                             return;
                         }
 
@@ -245,6 +252,16 @@ export class ShellProfiler {
         });
 
         UI.printKeyValuePairs(list);
+    }
+
+    private handleGetProfileNameCall() {
+        const result = this.sys.profileName;
+        if (!result) {
+            UI.error('No profile name set. Set it with set --profile:name');
+            return;
+        }
+
+        UI.print('Profile in use: ' + chalk.yellow(result), true);
     }
 
     private handleTokenSetCall(extractionResultValue: string) {
@@ -279,14 +296,20 @@ export class ShellProfiler {
         });
     }
 
-    private readProfiles() {
+    private handleProfileSetCall() {
+        this.readProfiles();
+    }
+
+    private readProfiles(inInitMode?: boolean) {
         UI.print('Reading GitHub stored profiles...');
         this.github
             .listGists()
             .subscribe(res => {
                 if (!res.data) {
                     UI.print('No profiles found. Creating a new one...');
-                    this.createProfile();
+                    if (inInitMode) {
+                        this.createProfile();
+                    }
                 }
 
                 if (res.data) {
@@ -296,11 +319,13 @@ export class ShellProfiler {
             });
     }
 
-    private selectProfile(res: ListGistsResult) {
+    private selectProfile(res: ListGistsResult, inInitMode?: boolean) {
+        console.log();
         res.data.forEach((g: any, i: number) => {
             const filename = Object.keys(g.files)[0].split('.')[0];
-            console.log(`${i}) ${chalk.yellow(filename)}`);
+            UI.print(`${i}) ${chalk.yellow(filename)}`);
         });
+        console.log();
 
         UI.askUserInput('Type the number of the profile you want to use: ', number => {
             if (!res.data[number]) {
@@ -309,11 +334,11 @@ export class ShellProfiler {
             }
 
             UI.print('Requesting selected profile content from GitHub...');
-            this.loadProfile(res.data[number]);
+            this.loadProfile(res.data[number], inInitMode);
         });
     }
 
-    private loadProfile(profileData: any) {
+    private loadProfile(profileData: any, inInitMode?: boolean) {
         const profileName = Object.keys(profileData.files)[0].split('.')[0];
         this.github
             .loadGist(profileData.url)
@@ -332,8 +357,10 @@ export class ShellProfiler {
                 const profile = <ProfilerData>JSON.parse(JSON.parse(res.data).files[profileName + GENERAL.gistFileExt].content);
                 PersistanceService.setItem(PersistanceItemType.profilerData, profile);
 
-                UI.success('Profile in use has been updated to: ' + profile.name);
-                UI.success('ShellProfiler initialization completed!');
+                UI.success('Profile in use has been updated to: ' + chalk.yellow(<string>profile.name), true);
+                if (inInitMode) {
+                    UI.success('ShellProfiler initialization completed!');
+                }
             });
     }
 

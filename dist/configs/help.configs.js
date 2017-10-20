@@ -11,12 +11,12 @@ exports.HELP = [
         options: `Checks if everything is ok\n${chalk.magenta('Options: none')}\n`,
     },
     {
-        command: 'list',
-        options: `Lists all the available aliases or functions.\n${chalk.magenta('Options: [--alias, --func]')}\n`,
+        command: 'ls',
+        options: `Lists informations about the given option.\n${chalk.magenta('Options: [--profile, --alias, --func]')}\n`,
     },
     {
         command: 'set',
-        options: `Sets the GitHub token or username.\n${chalk.magenta('Options: [--alias, --func, --token:tkn_value, --username:usr_value]')}\n`,
+        options: `Sets the value for the given option.\n${chalk.magenta('Options: [--profile, --alias, --func, --token:tkn_value, --username:usr_value]')}\n`,
     },
     {
         command: 'del',

@@ -35,6 +35,11 @@ export class SystemService {
         return !result.functions ? [] : result.functions.sort((a, b) => a.name.length - b.name.length);
     }
 
+    public get profileName(): string | null {
+        const result = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData))
+        return result.name;
+    }
+
     public help(): void {
         const set: any = [];
         HELP.forEach(h => {
