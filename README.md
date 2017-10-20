@@ -1,9 +1,14 @@
 # ShellProfiler [SP]
 ## (Still a work in progress. Not production ready)
-### Say goodbye to your old and ugly ***.bashrc*** file!
-Ever found yourself creating an amazing ***.bashrc*** file full of aliases, functions and exports on your machine? And suddently when switching to another bash capable machine, all those aliases, functions and exports aren't available unless you copy that file on the new machine, of course. How frustrating is it?
+## <blockquote>Where's the gain of using ShellProfiler?</blockquote>
+Ever found yourself creating an amazing ***.bashrc*** file full of aliases, functions and exports on your machine? And suddently when switching to another bash capable machine, all those aliases, functions and exports aren't available unless you copy that file on the new machine, of course. Also, if you need to add, delete or edit an existing item, you'll have to open up your .bashrc file, edit it, close it, and source it again. How frustrating is it? **A LOT**  
+At least for me, the laziest developer ever :P
 
 With **ShellProfiler** you can manage your bash profiles in a smart way. It syncs your profiles on GitHub using Gists, and allows you to switch between a profile and another at any time. It's meant to be cross-platform, which means that you can use it safely on **OSX**, **Linux** and **Windows** (you need to have a bash installed). It offers a CLI interface for **C.R.U.D** operations over **functions**, **aliases** and **exports**.
+
+What do I mean with manage your bash profiles in a smar way? Well, you won't have to open your .bashrc file anymore. You can add, edit and delete your aliases, functions and exports directly from the CLI. **SP** will ask you for a **name**, a **description** and a **body**. 
+
+Pretty cool uh?
 
 ## <blockquote>How does it work?</blockquote>
 ```sh
@@ -16,15 +21,8 @@ sp init
 # To see a full list of commands, just run sp
 sp
 ```
-The ```sp init``` command will start a procedure that will ask you 3 informations:
-+ **Your GitHub authorization token** (needed to manage the gist), if you don't have one just go on GitHub, on the authorization tokens page and create a new token with the Gists scope only. Copy the token and give it to **SP**
-
-+ **Your GitHub username**
-
-+ **The path to your main .bashrc file** this information is needed by **SP** in order to insert a ***source*** command inside your main profile, the one that the bash reads by default when booting up. The source command that will write inside will point to a core file. This file is managed by **SP**.
-
-Once you've provided all the informations and reviewed them, the initialization procedure starts.  
-**SP** creates its own folder called **.shell_profiler** inside your ***HOME*** directory. Inside, will store all its core files.  
+The ```sp init``` command will start a procedure that will ask you the basic initialization informations. See the ***available commands*** for more details.  
+**SP** creates its own folder called **.shell_profiler** inside your ***HOME*** directory. It will store all its core files inside.  
 
 ---
 **In Windows the directory will be**  
@@ -51,13 +49,58 @@ This is the file that contains all your **aliases**, **functions** and **exports
 ***Be aware that if you manually edit that file, when the first CRUD operation will occur, your edit will be lost.***  
 
 ## <blockquote>GitHub communication and Gists storage system</blockquote>
-### [This feature is still a work in progress.]
+**SP** is wired with GitHub, that's why it asks you your GitHub username and Token. Whenever you perform a **C.R.U.D** (Create, Read, Update, Delete) operation on any of your items (aliases, functions or exports), your Gist will be automatically updated.  
+
+When you initialize **SP** for the first time on a machine providing your token and username, **SP** will look on GitHub for any profile already saved. If one or more profiles are found, **SP** will present a list from which you can choose the profile you want to use. However, you can switch your profiles anytime.  
+
+If no profiles are found during the initialization, a new profile will be created. **SP** will ask you for the new profile name, you can type in any name you want. Or just press ENTER to use **DefaultProfile** as name.
+
+When you load a profile from GitHub, this will be stored locally on your machine in **JSON** format. If you disconnect your machine from the network, **SP** will continue functioning, but any communication with GitHub will be disabled. You can still add, delete and edit your items, and when the network connection will be available, all your changes will be pushed to GitHub.  
+
+**Just remember that when you're offline you won't have the ability to switch profile, the one loaded will remain till the connection won't be available again**
+
+## <blockquote>Available commands</blockquote>
+
+### **init**
+This command initializes ShellProfiler. It will guide you through a step by step procedure, asking you all the needed configuration data:
++ **Domain user or not:** if ran from a Windows enviroment, it will ask you if your user is part of a **DOMAIN**
++ **Domain user folder name:** if you belong to a **DOMAIN**, type in the **exact** domain user folder name. For example: ```caiuscitiriga.DOMAIN```
++ **GitHub authorization token:** the token you've created on GitHub with Gists scope. This is needed to authorize any **C.R.U.D** operation on your profile items
++ **GitHub username:** your GitHub username. **Just your username, not your email.** It will be used to access the right Gists and search your profiles only inside your user's scope.
++ **Your bashrc file absolute path:** this is the **absolute** path to your original .bashrc file. This information is needed by **SP** in order to add a ```source``` command inside of it. The command will source the internal **SP** ***.bashrc*** file, contained inside the core folder.
+
+It will then use your username to look on GitHub for any stored profile. If one or more profiles are found, it will list each one asking you to choose which one to use. If no profiles are found, it will automatically ask you for a new profile name. You can pass any name you want, or just press ENTER and use the default name, which is **DefaultProfile**.  
+
+**Note that even if one or more profiles are found on GitHub you can alway decide to create a new one by typing N.**  
+If you choose to use an existing profile, **SP** will gather the data for that profile and store it locally. Then it will set that profile as **currently in use**. You can switch it anytime.  
+If you decide to create a new one instead, or no profiles are found on GitHub, it will create a new profile locally and then push it on GitHub. Even in this case, the profile will be set as **currently in use**
+
+### **stat**
+Performs a full check over its core files. Verifying that all the core files are present, and that all the basic information needed are present.  
+It will then check that the profile in use locally is still present on GitHub too.  
+
+If everything ends fine, a success message will be presented, otherwise a error message will be presented. If this command fails, the safest thing you can do is to run the ```init``` command again.
+
+### **ls**
+Stands for ***list***, and can take several options.
++ ```ls --profile```
++ ```ls --alias```
++ ```ls --func```
+
+### **set**
+Allows you to set various **SP**'s configurations, or to create or update an alias, function or export. Takes several options.
++ ```ls --profile```
++ ```ls --alias```
++ ```ls --func```
+
+
+### **del**
 
 
 ## <blockquote>Known limitations</blockquote>
 Although I'm doing my best with **SP**, it still has some limitations. Some of them will remain, and some will be patched in the upcoming releases.  
 
-### **Functions body in one line**
+### <blockquote>Functions body in one line</blockquote>
 When setting a **function** that is very complex, right now you will have to do it on a single line. There's currently no way to span your function body on more than one line. Don't use the ***newline*** character (```\n```), it won't be respected, and worst of all it will be inserted as plain text inside your function body, potentially causing some problems while executing it.
 
 ### **Users in domain doesn't work properly in Windows**

@@ -168,6 +168,11 @@ export class ShellProfiler {
                     const aliases = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData)).aliases;
                     const indexedIds: { key: string, value: string }[] = [];
 
+                    if (!aliases.length) {
+                        UI.warn('No aliases available.');
+                        return;
+                    }
+
                     aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
                     UI.printKeyValuePairs(indexedIds);
                     UI.askUserInput('Type the number of the alias to delete: ', index => {
@@ -183,6 +188,11 @@ export class ShellProfiler {
                 if (extractionResult.option.indexOf('--func') !== -1) {
                     const functions = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData)).functions;
                     const indexedIds: { key: string, value: string }[] = [];
+
+                    if (!functions.length) {
+                        UI.warn('No functions available.');
+                        return;
+                    }
 
                     functions.forEach((f, i) => indexedIds.push({ key: `${i}) ${f.name}`, value: f.desc }));
                     UI.printKeyValuePairs(indexedIds);

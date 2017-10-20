@@ -136,6 +136,10 @@ class ShellProfiler {
                 if (extractionResult.option.indexOf('--alias') !== -1) {
                     const aliases = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).aliases;
                     const indexedIds = [];
+                    if (!aliases.length) {
+                        ui_service_1.UI.warn('No aliases available.');
+                        return;
+                    }
                     aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
                     ui_service_1.UI.printKeyValuePairs(indexedIds);
                     ui_service_1.UI.askUserInput('Type the number of the alias to delete: ', index => {
@@ -150,6 +154,10 @@ class ShellProfiler {
                 if (extractionResult.option.indexOf('--func') !== -1) {
                     const functions = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).functions;
                     const indexedIds = [];
+                    if (!functions.length) {
+                        ui_service_1.UI.warn('No functions available.');
+                        return;
+                    }
                     functions.forEach((f, i) => indexedIds.push({ key: `${i}) ${f.name}`, value: f.desc }));
                     ui_service_1.UI.printKeyValuePairs(indexedIds);
                     ui_service_1.UI.askUserInput('Type the number of the function to delete: ', index => {
