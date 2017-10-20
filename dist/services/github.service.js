@@ -9,18 +9,13 @@ const ui_service_1 = require("./ui.service");
 const persisance_service_1 = require("./persisance.service");
 class GitHubService {
     constructor() {
-        this.token = 'eb-3b-a9-52-28-40-ff-9c-2e-1d-d4-26-ce-d2-51-d2-93-e3-33-be';
         this.userGistsUri = 'https://api.github.com/users/';
         this.gistsUri = 'https://api.github.com/gists';
         this._$gistsListResult = new Subject_1.Subject();
         this._$gistsLoadResult = new Subject_1.Subject();
         this._$gistUpdateResult = new Subject_1.Subject();
         this._$gistCreationResult = new Subject_1.Subject();
-        let sanitizedTkn = '';
-        this.token.split('-').forEach(c => {
-            sanitizedTkn += c;
-        });
-        this.token = sanitizedTkn;
+        this.token = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.authData).githubToken;
     }
     listGists() {
         const githubUsername = this.getGitHubUsername();

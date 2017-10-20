@@ -20,7 +20,7 @@ import { PersistanceService } from './persisance.service';
 
 export class GitHubService {
 
-    public token: string = 'eb-3b-a9-52-28-40-ff-9c-2e-1d-d4-26-ce-d2-51-d2-93-e3-33-be';
+    public token: string;
 
     private userGistsUri = 'https://api.github.com/users/';
     private gistsUri = 'https://api.github.com/gists';
@@ -31,11 +31,7 @@ export class GitHubService {
     private _$gistCreationResult: Subject<GistCreationResult> = new Subject();
 
     public constructor() {
-        let sanitizedTkn = '';
-        this.token.split('-').forEach(c => {
-            sanitizedTkn += c;
-        });
-        this.token = sanitizedTkn;
+        this.token = <string>(<ProfilerAuth>PersistanceService.getItem(PersistanceItemType.authData)).githubToken;
     }
 
     public listGists(): Observable<ListGistsResult> {

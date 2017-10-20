@@ -1,5 +1,5 @@
-# ShellProfiler [SP]
-## (Still a work in progress. Not production ready)
+# **{SP}** ShellProfiler <small>```beta```</small>
+
 ## <blockquote>Where's the gain of using ShellProfiler?</blockquote>
 Ever found yourself creating an amazing ***.bashrc*** file full of aliases, functions and exports on your machine? And suddently when switching to another bash capable machine, all those aliases, functions and exports aren't available unless you copy that file on the new machine, of course. Also, if you need to add, delete or edit an existing item, you'll have to open up your .bashrc file, edit it, close it, and source it again. How frustrating is it? **A LOT**  
 At least for me, the laziest developer ever :P
@@ -77,7 +77,6 @@ If you decide to create a new one instead, or no profiles are found on GitHub, i
 
 ### **stat**
 Performs a full check over its core files. Verifying that all the core files are present, and that all the basic information needed are present.  
-It will then check that the profile in use locally is still present on GitHub too.  
 
 If everything ends fine, a success message will be presented, otherwise a error message will be presented. If this command fails, the safest thing you can do is to run the ```init``` command again.
 
@@ -88,19 +87,35 @@ Stands for ***list***, and can take several options.
 + ```ls --func```
 
 ### **set**
-Allows you to set various **SP**'s configurations, or to create or update an alias, function or export. Takes several options.
-+ ```ls --profile```
-+ ```ls --alias```
-+ ```ls --func```
+Allows you to set various **SP**'s configurations, or to create or update an alias, function or export. Takes several options divided in two categories. ***Simple options***, and ***Composite options***.  
 
+**Simple options** requires more than one information from the user to get the job done. A simple option takes just the ***command*** and the ***flag***. For example: ```sp set --alias```. Since this command needs several informations from the user it will start prompting a series of questions.
+
+**Composite options** requires just one information from the user to get the job done. This information is passed concatenating a semicolon ```:``` after the flag, followed by the concerned value. For example: ```sp set --username:caiuscitiriga```
+
+#### Simple options
++ ```set --func```: creates a new function with the given name, if it does not exist yet. Otherwise the value of the existing one is updated.  
+
++ ```set --alias```: creates a new alias with the given name, if it does not exist yet. Otherwise the value of the existing one is updated.
+
++ ```set --profile```: it will list all the available profiles on GitHub. Then it will prompt you for which one you'd like to use. The switch is blazing fast.
+
+#### Composite options
++ ```set --username:value``` sets the GitHub username value. Be aware that if you change your username, the current token won't work anymore.
+
++ ```set --token:value``` sets the GitHub authorization token value. Be aware that if you change your token, the current username might not work.
+
+
+**Note that when updating an existing function, alias or export, even if SP will ask for the description, this one will be ignored, and the old one will remain untouched.**  
 
 ### **del**
-
++ ```--alias```: lists all the available aliases, then prompts the user for the alias number to delete.
++ ```--func```: lists all the available functions, then prompts the user for the alias number to delete.
 
 ## <blockquote>Known limitations</blockquote>
 Although I'm doing my best with **SP**, it still has some limitations. Some of them will remain, and some will be patched in the upcoming releases.  
 
-### <blockquote>Functions body in one line</blockquote>
+### **Functions body in one line**
 When setting a **function** that is very complex, right now you will have to do it on a single line. There's currently no way to span your function body on more than one line. Don't use the ***newline*** character (```\n```), it won't be respected, and worst of all it will be inserted as plain text inside your function body, potentially causing some problems while executing it.
 
 ### **Users in domain doesn't work properly in Windows**
@@ -120,13 +135,19 @@ This is because it's using the Node's ```os.userInfo().username``` to retrieve y
 For some reason Node thinks that the user is the second one, instead of the first one.  
 **SP** will ask you if you're in domain whenever it will detect that you run the ```init``` command in **Windows**. If you will say **yes** it will ask you for the right user folder (watch the casing).
 
+### **Each ```init``` command creates a duplicate ```source``` entry in your .bashrc**
+This is an easy fix to implement, and it will be patched in the upcoming releases. For now, just remember to clear your duplicates after each ```init```
+
+### **There's no way to delete a profile yet**
+In the next releases a flag will be added to the ```del``` command, which will allow the user to choose the profile to delete. For now, you cannot delete a profile 
+
 ---
 
 ## <blockquote>Requirements</blockquote>
 + ### Node 8.x.x
 
 ## Help ShellProfiler grow
-If you like this project please help me with your feedback. Found a bug? Want a feature? Want some help? Feel free to open a [Issue on GitHub](https://github.com/caiuscitiriga/smart-cli/issues).
+If you like this project please help me with your feedback, leave a star :) Found a bug? Want a feature? Want some help? Feel free to open a [Issue on GitHub](https://github.com/caiuscitiriga/smart-cli/issues).
 
 ## Versioning
 We use [SemVer](http://semver.org/) for versioning. 
