@@ -104,8 +104,7 @@ Allows you to set various **SP**'s configurations, or to create or update an ali
 #### Composite options
 + ```set --username:value``` sets the GitHub username value. Be aware that if you change your username, the current token won't work anymore.
 
-+ ```set --token:value``` sets the GitHub authorization token value. Be aware that if you change your token, the current username might not work.
-
++ ```set --token:value``` sets the GitHub authorization token value. Be aware that if you change your token, the current username might not work.  
 
 **Note that when updating an existing function, alias or export, even if SP will ask for the description, this one will be ignored, and the old one will remain untouched.**  
 
