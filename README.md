@@ -82,9 +82,10 @@ If everything ends fine, a success message will be presented, otherwise a error 
 
 ### **ls**
 Stands for ***list***, and can take several options.
-+ ```ls --profile```
-+ ```ls --alias```
-+ ```ls --func```
++ ```ls --profile``` gets a list of all the profiles on GitHub, and prompts the user to select one.
+
++ ```ls --alias``` prints a list of all the available aliases managed by **SP**
++ ```ls --func``` prints a list of all the available functions managed by **SP**
 
 ### **set**
 Allows you to set various **SP**'s configurations, or to create or update an alias, function or export. Takes several options divided in two categories. ***Simple options***, and ***Composite options***.  
@@ -156,4 +157,4 @@ We use [SemVer](http://semver.org/) for versioning.
 * [**Caius Citiriga**](https://github.com/caiuscitiriga)
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
