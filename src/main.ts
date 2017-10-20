@@ -51,21 +51,6 @@ export class ShellProfiler {
         let extractionResult: { option: string, value?: string } | null;
 
         switch (this.args[0]) {
-            //  TODO: Remove in production
-            case 'glist':
-                const gists: any[] = <any>this.github.listGists();
-                if (!gists || gists.length) {
-                    UI.warn('No gists on GitHub');
-                }
-                break;
-            //  TODO: Remove in production
-            case 'tkn':
-                const github = new GitHubService();
-                let tkn = ""
-                github.token.split('-').forEach(char => tkn += char);
-                UI.print(tkn);
-                break;
-
             case 'init':
                 if (this.sys.isWindows) {
                     UI.askUserInput(chalk.yellow('WINDOWS DETECTED: Are you part of a Domain? Y/N '), answer => {
@@ -213,7 +198,6 @@ export class ShellProfiler {
                 break;
 
             default:
-                //  Look for an available alias or function    
                 UI.warn('No command exists with that name');
                 break;
         }
