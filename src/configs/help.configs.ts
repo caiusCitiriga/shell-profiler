@@ -11,14 +11,14 @@ export const HELP = [
     },
     {
         command: 'ls',
-        options: `Lists informations about the given option.\n${chalk.magenta('Options: [--profile, --alias, --func]')}\n`,
+        options: `Lists informations about the given option.\n${chalk.magenta('Options: [--profile, (--alias, --a), (--func, --f)]')}\n`,
     },
     {
         command: 'set',
-        options: `Sets the value for the given option.\n${chalk.magenta('Options: [--profile, --alias, --func, --token:tkn_value, --username:usr_value]')}\n`,
+        options: `Sets the value for the given option.\n${chalk.magenta('Options: [--profile, (--alias, --a), (--func, --f), --token:tkn_value, --username:usr_value]')}\n`,
     },
     {
         command: 'del',
-        options: `Deletes an alias or a function.\n${chalk.magenta('Options: [--alias, --func]')}\n`
+        options: `Deletes an alias or a function.\n${chalk.magenta('Options: [(--alias, --a), (--func, --f)]')}\n`
     }
 ]
