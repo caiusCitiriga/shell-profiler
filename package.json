@@ -1,6 +1,6 @@
 {
     "name": "shell-profiler",
-    "version": "0.1.0",
+    "version": "1.0.0-rc.1",
     "description": "Say goodbye to your old and ugly .bashrc file, say hello to your new cloud, cross-platform, multi machine synced bash profile",
     "main": "webpack.config.js",
     "bin": {
