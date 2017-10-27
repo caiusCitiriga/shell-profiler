@@ -29,7 +29,7 @@ class GitHubService {
             uri: this.userGistsUri + githubUsername + '/gists'
         }, (error, response, body) => {
             if (error) {
-                console.log('There was an error sending the list gists request');
+                console.log('There was an error sending the list profiles request');
                 console.log(error);
                 this._$gistsListResult.next({ status: 999, data: null, error: error });
             }
@@ -57,7 +57,7 @@ class GitHubService {
             }
         }, (error, response, body) => {
             if (error) {
-                console.log('There was an error loading the gist');
+                console.log('There was an error loading the profile');
                 console.log(error);
                 this._$gistsLoadResult.next({ status: 999, data: null, error: error });
                 return;
@@ -90,25 +90,22 @@ class GitHubService {
             }
         }, (error, response, body) => {
             if (error) {
-                console.log('There was an error creating the gist');
-                console.log(error);
+                ui_service_1.UI.error('There was an error creating the profile');
+                ui_service_1.UI.error(error);
                 this._$gistCreationResult.next({ status: 999, data: null, error: error });
                 return;
             }
             if (response.statusCode === 401) {
-                console.log('NOT Authorized');
-                console.log(body.message);
+                ui_service_1.UI.error('Not authorized!');
                 this._$gistCreationResult.next({ status: 401, data: null, error: body.message });
                 return;
             }
             if (response.statusCode === 422) {
-                console.log('Unprocessable entity');
-                console.log(body.message);
+                ui_service_1.UI.error(body.message);
                 this._$gistCreationResult.next({ status: 422, data: null, error: body.message });
                 return;
             }
             if (response.statusCode === 201) {
-                console.log('Success!');
                 this._$gistCreationResult.next({ status: 201, data: response['body'] });
                 return;
             }
@@ -142,7 +139,9 @@ class GitHubService {
                 this._$gistsLoadResult.next({ status: 999, data: null, error: error });
                 return;
             }
-            console.log(response.statusCode);
+            if (response.statusCode) {
+                ui_service_1.UI.success('In sync.');
+            }
             this._$gistsLoadResult.next({ status: 200, data: response['body'] });
         });
         return this._$gistsLoadResult.asObservable();

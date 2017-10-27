@@ -64,15 +64,15 @@ class ShellProfiler {
                 if (!this.checkExtraOptionsPresence([1])) {
                     return;
                 }
-                acceptedOptions = [{ option: '--alias' }, { option: '--func' }, { option: '--profile' }];
+                acceptedOptions = [{ option: '--alias' }, { option: '--a' }, { option: '--func' }, { option: '--f' }, { option: '--profile' }];
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
                 if (!extractionResult) {
                     return;
                 }
-                if (extractionResult.option.indexOf('--alias') !== -1) {
+                if (extractionResult.option.indexOf('--alias') !== -1 || extractionResult.option.indexOf('--a') !== -1) {
                     this.handleAliasListCall();
                 }
-                if (extractionResult.option.indexOf('--func') !== -1) {
+                if (extractionResult.option.indexOf('--func') !== -1 || extractionResult.option.indexOf('--f') !== -1) {
                     this.handleFunctionListCall();
                 }
                 if (extractionResult.option.indexOf('--profile') !== -1) {
@@ -85,7 +85,9 @@ class ShellProfiler {
                 }
                 acceptedOptions = [
                     { option: '--func' },
+                    { option: '--f' },
                     { option: '--alias' },
+                    { option: '--a' },
                     { option: '--profile' },
                     { option: '--token', mustHaveValue: true },
                     { option: '--username', mustHaveValue: true }
@@ -94,10 +96,10 @@ class ShellProfiler {
                 if (!extractionResult) {
                     return;
                 }
-                if (extractionResult.option === '--func') {
+                if (extractionResult.option === '--func' || extractionResult.option === '--f') {
                     this.handleFunctionSetCall();
                 }
-                if (extractionResult.option === '--alias') {
+                if (extractionResult.option === '--alias' || extractionResult.option === '--a') {
                     this.handleAliasSetCall();
                 }
                 if (extractionResult.option === '--profile') {
@@ -114,12 +116,17 @@ class ShellProfiler {
                 if (!this.checkExtraOptionsPresence([1])) {
                     return;
                 }
-                acceptedOptions = [{ option: '--alias' }, { option: '--func' }];
+                acceptedOptions = [
+                    { option: '--alias' },
+                    { option: '--a' },
+                    { option: '--func' },
+                    { option: '--f' }
+                ];
                 extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
                 if (!extractionResult) {
                     return;
                 }
-                if (extractionResult.option.indexOf('--alias') !== -1) {
+                if (extractionResult.option.indexOf('--alias') !== -1 || extractionResult.option.indexOf('--a') !== -1) {
                     const aliases = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).aliases;
                     const indexedIds = [];
                     if (!aliases.length) {
@@ -137,7 +144,7 @@ class ShellProfiler {
                         this.sys.deleteItem(item_type_enum_1.ItemType.alias, aliases[index].id);
                     });
                 }
-                if (extractionResult.option.indexOf('--func') !== -1) {
+                if (extractionResult.option.indexOf('--func') !== -1 || extractionResult.option.indexOf('--f') !== -1) {
                     const functions = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).functions;
                     const indexedIds = [];
                     if (!functions.length) {
