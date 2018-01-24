@@ -198,22 +198,13 @@ export class SystemService {
     }
 
     public deleteItem(type: ItemType, id: string) {
-        if (type === ItemType.alias) {
-            const profilerData = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
-            profilerData.aliases = profilerData.aliases.filter(a => a.id !== id);
-
-            PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
-            this.updateGist(profilerData);
+        if (this.isMultipleChoice(id)) {
+            const ids = this.extractIdsFromSingleString(id);
+            this.multipleDelete(ids, type);
+            return;
         }
 
-        if (type === ItemType.function) {
-            const profilerData = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
-            profilerData.functions = profilerData.functions.filter(f => f.id !== id);
-
-            PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
-            this.updateGist(profilerData);
-        }
-        if (type === ItemType.export) { }
+        this.singleDelete(type, id);
     }
 
     public checkProfilerDataIntegrity() {
@@ -247,5 +238,36 @@ export class SystemService {
         PersistanceService.setItem(PersistanceItemType.authData, profilerAuth);
         PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
         PersistanceService.setItem(PersistanceItemType.rawProfileData, rawProfileData);
+    }
+
+    private isMultipleChoice(potentialIdsList: string) {
+        return potentialIdsList.split(',').length > 1 ? true : false;
+    }
+
+    private singleDelete(type: ItemType, id: string) {
+        if (type === ItemType.alias) {
+            const profilerData = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
+            profilerData.aliases = profilerData.aliases.filter(a => a.id !== id);
+
+            PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
+            this.updateGist(profilerData);
+        }
+
+        if (type === ItemType.function) {
+            const profilerData = <ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData);
+            profilerData.functions = profilerData.functions.filter(f => f.id !== id);
+
+            PersistanceService.setItem(PersistanceItemType.profilerData, profilerData);
+            this.updateGist(profilerData);
+        }
+        if (type === ItemType.export) { }
+    }
+
+    private multipleDelete(ids: string[], type: ItemType) {
+        ids.forEach(id => this.singleDelete(type, id));
+    }
+
+    private extractIdsFromSingleString(idsString: string, splittingChar = ','): string[] {
+        return idsString.split(splittingChar);
     }
 }
