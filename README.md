@@ -1,12 +1,12 @@
-# **{SP}** ShellProfiler <small>```beta```</small>
+# **{SP}** ShellProfiler
 
 ## <blockquote>Where's the gain of using ShellProfiler?</blockquote>
-Ever found yourself creating an amazing ***.bashrc*** file full of aliases, functions and exports on your machine? And suddently when switching to another bash capable machine, all those aliases, functions and exports aren't available unless you copy that file on the new machine, of course. Also, if you need to add, delete or edit an existing item, you'll have to open up your .bashrc file, edit it, close it, and source it again. How frustrating is it? **A LOT**  
+Ever found yourself creating an amazing ***.bashrc*** file full of aliases, functions and exports on your machine? And suddenly when switching to another machine, all those aliases, functions and exports aren't available unless you copy that file on the new machine, of course. Also, if you need to add, delete or edit an existing item, you'll have to open up your .bashrc file, edit it, close it, and source it again. How frustrating is it? **A LOT**  
 At least for me, the laziest developer ever :P
 
 With **ShellProfiler** you can manage your bash profiles in a smart way. It syncs your profiles on GitHub using Gists, and allows you to switch between a profile and another at any time. It's meant to be cross-platform, which means that you can use it safely on **OSX**, **Linux** and **Windows** (you need to have a bash installed). It offers a CLI interface for **C.R.U.D** operations over **functions**, **aliases** and **exports**.
 
-What do I mean with manage your bash profiles in a smar way? Well, you won't have to open your .bashrc file anymore. You can add, edit and delete your aliases, functions and exports directly from the CLI. **SP** will ask you for a **name**, a **description** and a **body**. 
+What do I mean with manage your bash profiles in a smar way? You won't have to open your .bashrc file anymore. You can add, edit and delete your aliases, functions and exports directly from the CLI. **SP** will ask you for a **name**, a **description** and a **body**. 
 
 Pretty cool uh?
 
