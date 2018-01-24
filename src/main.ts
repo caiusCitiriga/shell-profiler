@@ -22,6 +22,7 @@ import { GENERAL } from './configs/general.configs';
 import { GistCreationResult } from './entities/GistCreationResult.entity';
 import { ListGistsResult } from './entities/ListGistsResult.entity';
 import { ProfilerAuth } from './entities/ProfilerAtuh.entity';
+import { CoreCommands } from './enums/core-commands.enum';
 
 export class ShellProfiler {
     private args: string[];
@@ -45,28 +46,24 @@ export class ShellProfiler {
     }
 
     private dispatch() {
-        if (this.args[0] === 'init') {
+        if (this.args[0] === CoreCommands.init) {
             this.handlePreInitCall();
             return;
         }
-        if (this.args[0] === 'stat') {
+        if (this.args[0] === CoreCommands.stat) {
             this.handleStatCall();
             return;
         }
-        if (this.args[0] === 'ls') {
+        if (this.args[0] === CoreCommands.ls) {
             this.handleLsCall();
             return;
         }
-        if (this.args[0] === 'set') {
+        if (this.args[0] === CoreCommands.set) {
             this.handleSetCall();
             return;
         }
-        if (this.args[0] === 'del') {
+        if (this.args[0] === CoreCommands.del) {
             this.handleDelCall();
-            return;
-        }
-        if (this.args[0] === 'help') {
-            this.sys.help();
             return;
         }
 
