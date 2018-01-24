@@ -8,13 +8,13 @@ const process = require("process");
 const help_configs_1 = require("../configs/help.configs");
 const general_configs_1 = require("../configs/general.configs");
 const item_type_enum_1 = require("../enums/item-type.enum");
+const persistance_item_type_enum_1 = require("../enums/persistance-item-type.enum");
 const ProfilerData_entity_1 = require("../entities/ProfilerData.entity");
 const ProfilerAtuh_entity_1 = require("../entities/ProfilerAtuh.entity");
 const ui_service_1 = require("./ui.service");
+const github_service_1 = require("./github.service");
 const rmdir_recursive_service_1 = require("./rmdir-recursive.service");
 const persisance_service_1 = require("./persisance.service");
-const persistance_item_type_enum_1 = require("../enums/persistance-item-type.enum");
-const github_service_1 = require("./github.service");
 class SystemService {
     get isWindows() {
         return os.platform() === 'win32' ? true : false;

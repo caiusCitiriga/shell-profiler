@@ -9,16 +9,16 @@ import { HELP } from '../configs/help.configs';
 import { GENERAL } from '../configs/general.configs';
 
 import { ItemType } from '../enums/item-type.enum';
+import { PersistanceItemType } from '../enums/persistance-item-type.enum';
 
 import { ProfilerData } from '../entities/ProfilerData.entity';
 import { ProfilerAuth } from '../entities/ProfilerAtuh.entity';
 import { ProfilerItem } from '../entities/ProfilerItem.entity';
 
 import { UI } from './ui.service';
+import { GitHubService } from './github.service';
 import { RmdirRecursive } from './rmdir-recursive.service';
 import { PersistanceService } from './persisance.service';
-import { PersistanceItemType } from '../enums/persistance-item-type.enum';
-import { GitHubService } from './github.service';
 
 export class SystemService {
 

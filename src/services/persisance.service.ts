@@ -1,11 +1,13 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 import { PersistanceItemType } from '../enums/persistance-item-type.enum';
 
 import { ProfilerAuth } from '../entities/ProfilerAtuh.entity';
 import { ProfilerData } from '../entities/ProfilerData.entity';
-import * as fs from 'fs';
+
 import { GENERAL } from '../configs/general.configs';
-import * as os from 'os';
-import * as path from 'path';
 
 export class PersistanceService {
 

@@ -13,15 +13,14 @@ const persisance_service_1 = require("./services/persisance.service");
 const persistance_item_type_enum_1 = require("./enums/persistance-item-type.enum");
 const item_type_enum_1 = require("./enums/item-type.enum");
 const general_configs_1 = require("./configs/general.configs");
+const core_commands_enum_1 = require("./enums/core-commands.enum");
 class ShellProfiler {
     constructor() {
         this.sys = new system_service_1.SystemService();
         this.github = new github_service_1.GitHubService();
     }
     start() {
-        this.args = process.argv;
-        this.args.shift();
-        this.args.shift();
+        this.cleanupArgs();
         if (this.args.length) {
             this.dispatch();
             return;
@@ -29,149 +28,166 @@ class ShellProfiler {
         this.sys.help();
     }
     dispatch() {
-        let acceptedOptions;
-        let extractionResult;
-        switch (this.args[0]) {
-            case 'init':
-                if (this.sys.isWindows) {
-                    ui_service_1.UI.askUserInput(chalk.yellow('WINDOWS DETECTED: Are you part of a Domain? Y/N '), answer => {
-                        if (answer.trim().toLowerCase() === 'y') {
-                            ui_service_1.UI.askUserInput(chalk.yellow('Type your domain user folder name: '), domainUserFolderName => {
-                                this.handleInitCall(domainUserFolderName);
-                            });
-                        }
-                        if (answer.trim().toLowerCase() === 'n') {
-                            this.handleInitCall();
-                        }
-                        if (answer.trim().toLowerCase() !== 'n' && answer.trim().toLowerCase() !== 'y') {
-                            ui_service_1.UI.error('Invalid answer.');
-                            this.dispatch();
-                        }
+        if (this.args[0] === core_commands_enum_1.CoreCommands.init) {
+            this.handlePreInitCall();
+            return;
+        }
+        if (this.args[0] === core_commands_enum_1.CoreCommands.stat) {
+            this.handleStatCall();
+            return;
+        }
+        if (this.args[0] === core_commands_enum_1.CoreCommands.ls) {
+            this.handleLsCall();
+            return;
+        }
+        if (this.args[0] === core_commands_enum_1.CoreCommands.set) {
+            this.handleSetCall();
+            return;
+        }
+        if (this.args[0] === core_commands_enum_1.CoreCommands.del) {
+            this.handleDelCall();
+            return;
+        }
+        this.sys.help();
+    }
+    handlePreInitCall() {
+        if (this.sys.isWindows) {
+            ui_service_1.UI.askUserInput(chalk.yellow('WINDOWS DETECTED: Are you part of a Domain? Y/N '), answer => {
+                if (answer.trim().toLowerCase() === 'y') {
+                    ui_service_1.UI.askUserInput(chalk.yellow('Type your domain user folder name: '), domainUserFolderName => {
+                        this.handleRealInitCall(domainUserFolderName);
                     });
                 }
-                else {
-                    this.handleInitCall();
+                if (answer.trim().toLowerCase() === 'n') {
+                    this.handleRealInitCall();
                 }
-                break;
-            case 'stat':
-                if (this.sys.checkProfilerDataIntegrity()) {
-                    ui_service_1.UI.success('ShellProfiler is happy! :)');
-                    return;
+                if (answer.trim().toLowerCase() !== 'n' && answer.trim().toLowerCase() !== 'y') {
+                    ui_service_1.UI.error('Invalid answer.');
+                    this.dispatch();
                 }
-                ui_service_1.UI.error('There are issues with your configuration. Run the init script to make ShellProfiler happy again');
-                break;
-            case 'ls':
-                if (!this.checkExtraOptionsPresence([1])) {
-                    return;
-                }
-                acceptedOptions = [{ option: '--alias' }, { option: '--a' }, { option: '--func' }, { option: '--f' }, { option: '--profile' }];
-                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
-                if (!extractionResult) {
-                    return;
-                }
-                if (extractionResult.option.indexOf('--alias') !== -1 || extractionResult.option.indexOf('--a') !== -1) {
-                    this.handleAliasListCall();
-                }
-                if (extractionResult.option.indexOf('--func') !== -1 || extractionResult.option.indexOf('--f') !== -1) {
-                    this.handleFunctionListCall();
-                }
-                if (extractionResult.option.indexOf('--profile') !== -1) {
-                    this.handleGetProfileNameCall();
-                }
-                break;
-            case 'set':
-                if (!this.checkExtraOptionsPresence([1])) {
-                    return;
-                }
-                acceptedOptions = [
-                    { option: '--func' },
-                    { option: '--f' },
-                    { option: '--alias' },
-                    { option: '--a' },
-                    { option: '--profile' },
-                    { option: '--token', mustHaveValue: true },
-                    { option: '--username', mustHaveValue: true }
-                ];
-                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
-                if (!extractionResult) {
-                    return;
-                }
-                if (extractionResult.option === '--func' || extractionResult.option === '--f') {
-                    this.handleFunctionSetCall();
-                }
-                if (extractionResult.option === '--alias' || extractionResult.option === '--a') {
-                    this.handleAliasSetCall();
-                }
-                if (extractionResult.option === '--profile') {
-                    this.handleProfileSetCall();
-                }
-                if (extractionResult.option.indexOf('--token') !== -1 && extractionResult.value) {
-                    this.handleTokenSetCall(extractionResult.value);
-                }
-                if (extractionResult.option.indexOf('--username') !== -1 && extractionResult.value) {
-                    this.handleUsernameSetCall(extractionResult.value);
-                }
-                break;
-            case 'del':
-                if (!this.checkExtraOptionsPresence([1])) {
-                    return;
-                }
-                acceptedOptions = [
-                    { option: '--alias' },
-                    { option: '--a' },
-                    { option: '--func' },
-                    { option: '--f' }
-                ];
-                extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
-                if (!extractionResult) {
-                    return;
-                }
-                if (extractionResult.option.indexOf('--alias') !== -1 || extractionResult.option.indexOf('--a') !== -1) {
-                    const aliases = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).aliases;
-                    const indexedIds = [];
-                    if (!aliases.length) {
-                        ui_service_1.UI.warn('No aliases available.');
-                        return;
-                    }
-                    aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
-                    ui_service_1.UI.printKeyValuePairs(indexedIds);
-                    ui_service_1.UI.askUserInput('Type the number of the alias to delete: ', index => {
-                        if (!aliases[index]) {
-                            ui_service_1.UI.error('You must provide a valid number');
-                            this.dispatch();
-                            return;
-                        }
-                        this.sys.deleteItem(item_type_enum_1.ItemType.alias, aliases[index].id);
-                    });
-                }
-                if (extractionResult.option.indexOf('--func') !== -1 || extractionResult.option.indexOf('--f') !== -1) {
-                    const functions = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).functions;
-                    const indexedIds = [];
-                    if (!functions.length) {
-                        ui_service_1.UI.warn('No functions available.');
-                        return;
-                    }
-                    functions.forEach((f, i) => indexedIds.push({ key: `${i}) ${f.name}`, value: f.desc }));
-                    ui_service_1.UI.printKeyValuePairs(indexedIds);
-                    ui_service_1.UI.askUserInput('Type the number of the function to delete: ', index => {
-                        if (!functions[index]) {
-                            ui_service_1.UI.error('You must provide a valid number');
-                            this.dispatch();
-                            return;
-                        }
-                        this.sys.deleteItem(item_type_enum_1.ItemType.function, functions[index].id);
-                    });
-                }
-                break;
-            case 'help':
-                this.sys.help();
-                break;
-            default:
-                ui_service_1.UI.warn('No command exists with that name');
-                break;
+            });
+        }
+        else {
+            this.handleRealInitCall();
         }
     }
-    handleInitCall(domainUserFolderName) {
+    handleStatCall() {
+        if (this.sys.checkProfilerDataIntegrity()) {
+            ui_service_1.UI.success('ShellProfiler is happy! :)');
+            return;
+        }
+        ui_service_1.UI.error('There are issues with your configuration. Run the init script to make ShellProfiler happy again');
+    }
+    handleLsCall() {
+        if (!this.checkExtraOptionsPresence([1])) {
+            return;
+        }
+        const acceptedOptions = [
+            { option: '--f' },
+            { option: '--a' },
+            { option: '--func' },
+            { option: '--alias' },
+            { option: '--profile' }
+        ];
+        const extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+        if (!extractionResult) {
+            return;
+        }
+        if (extractionResult.option.indexOf('--alias') !== -1 || extractionResult.option.indexOf('--a') !== -1) {
+            this.handleAliasListCall();
+        }
+        if (extractionResult.option.indexOf('--func') !== -1 || extractionResult.option.indexOf('--f') !== -1) {
+            this.handleFunctionListCall();
+        }
+        if (extractionResult.option.indexOf('--profile') !== -1) {
+            this.handleGetProfileNameCall();
+        }
+    }
+    handleSetCall() {
+        if (!this.checkExtraOptionsPresence([1])) {
+            return;
+        }
+        const acceptedOptions = [
+            { option: '--func' },
+            { option: '--f' },
+            { option: '--alias' },
+            { option: '--a' },
+            { option: '--profile' },
+            { option: '--token', mustHaveValue: true },
+            { option: '--username', mustHaveValue: true }
+        ];
+        const extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+        if (!extractionResult) {
+            return;
+        }
+        if (extractionResult.option === '--func' || extractionResult.option === '--f') {
+            this.handleFunctionSetCall();
+        }
+        if (extractionResult.option === '--alias' || extractionResult.option === '--a') {
+            this.handleAliasSetCall();
+        }
+        if (extractionResult.option === '--profile') {
+            this.handleProfileSetCall();
+        }
+        if (extractionResult.option.indexOf('--token') !== -1 && extractionResult.value) {
+            this.handleTokenSetCall(extractionResult.value);
+        }
+        if (extractionResult.option.indexOf('--username') !== -1 && extractionResult.value) {
+            this.handleUsernameSetCall(extractionResult.value);
+        }
+    }
+    handleDelCall() {
+        if (!this.checkExtraOptionsPresence([1])) {
+            return;
+        }
+        const acceptedOptions = [
+            { option: '--alias' },
+            { option: '--a' },
+            { option: '--func' },
+            { option: '--f' }
+        ];
+        const extractionResult = this.extractOptionsAndValues(1, acceptedOptions);
+        if (!extractionResult) {
+            return;
+        }
+        if (extractionResult.option.indexOf('--alias') !== -1 || extractionResult.option.indexOf('--a') !== -1) {
+            const aliases = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).aliases;
+            const indexedIds = [];
+            if (!aliases.length) {
+                ui_service_1.UI.warn('No aliases available.');
+                return;
+            }
+            aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
+            ui_service_1.UI.printKeyValuePairs(indexedIds);
+            ui_service_1.UI.askUserInput('Type the number of the alias to delete: ', index => {
+                if (!aliases[index]) {
+                    ui_service_1.UI.error('You must provide a valid number');
+                    this.dispatch();
+                    return;
+                }
+                this.sys.deleteItem(item_type_enum_1.ItemType.alias, aliases[index].id);
+            });
+        }
+        if (extractionResult.option.indexOf('--func') !== -1 || extractionResult.option.indexOf('--f') !== -1) {
+            const functions = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).functions;
+            const indexedIds = [];
+            if (!functions.length) {
+                ui_service_1.UI.warn('No functions available.');
+                return;
+            }
+            functions.forEach((f, i) => indexedIds.push({ key: `${i}) ${f.name}`, value: f.desc }));
+            ui_service_1.UI.printKeyValuePairs(indexedIds);
+            ui_service_1.UI.askUserInput('Type the number of the function to delete: ', index => {
+                if (!functions[index]) {
+                    ui_service_1.UI.error('You must provide a valid number');
+                    this.dispatch();
+                    return;
+                }
+                this.sys.deleteItem(item_type_enum_1.ItemType.function, functions[index].id);
+            });
+        }
+    }
+    handleRealInitCall(domainUserFolderName) {
         ui_service_1.UI.askUserInput(chalk.green('GitHub authorization token: '), token => {
             ui_service_1.UI.askUserInput(chalk.green('GitHub username: '), username => {
                 ui_service_1.UI.askUserInput(chalk.green('Your bashrc file absolute path: '), bashrc_path => {
@@ -362,6 +378,11 @@ class ShellProfiler {
             returnSet.option = matchingOption.option;
         }
         return returnSet;
+    }
+    cleanupArgs() {
+        this.args = process.argv;
+        this.args.shift();
+        this.args.shift();
     }
 }
 exports.ShellProfiler = ShellProfiler;

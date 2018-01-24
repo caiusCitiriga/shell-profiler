@@ -5,7 +5,8 @@ const chalk = require("chalk");
 const process = require("process");
 class UI {
     static printKeyValuePairs(set, space_char = ' ') {
-        const longestKeyLen = set.reduce((p, c) => p < c.key.length ? c.key.length : false, 0);
+        let longestKeyLen = set[0].key.length;
+        set.forEach(s => longestKeyLen = s.key.length > longestKeyLen ? s.key.length : longestKeyLen);
         set.forEach(pair => {
             let spaces = space_char;
             for (let i = 0; i < (longestKeyLen - pair.key.length); i++) {

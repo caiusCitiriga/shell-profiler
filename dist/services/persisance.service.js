@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const persistance_item_type_enum_1 = require("../enums/persistance-item-type.enum");
 const fs = require("fs");
-const general_configs_1 = require("../configs/general.configs");
 const os = require("os");
 const path = require("path");
+const persistance_item_type_enum_1 = require("../enums/persistance-item-type.enum");
+const general_configs_1 = require("../configs/general.configs");
 class PersistanceService {
     static getItem(itemType) {
         process.chdir(os.homedir() + path.sep + general_configs_1.GENERAL.profilerDataDirectory);
