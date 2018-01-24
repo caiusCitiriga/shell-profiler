@@ -194,9 +194,30 @@ export class ShellProfiler {
             aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
             UI.printKeyValuePairs(indexedIds);
             UI.askUserInput('Type the number of the alias to delete: ', index => {
-                if (!aliases[index]) {
-                    UI.error('You must provide a valid number');
+                if (!aliases[index] && !this.isMultipleChoice(index)) {
+                    UI.error('You must provide a valid number or a comma separated list of numbers');
                     this.dispatch();
+                    return;
+                }
+                if (this.isMultipleChoice(index)) {
+                    let skippedItems = 0;
+                    this.extractIdsFromSingleString(index)
+                        .forEach(idx => {
+                            const _index = parseInt(idx);
+                            //  If the index to delete is not valid
+                            if (!aliases[_index]) {
+                                skippedItems++
+                                return;
+                            }
+
+                            this.sys.deleteItem(ItemType.alias, aliases[_index].id);
+                        });
+                    if (!skippedItems) {
+                        UI.print('Deleting aliases...');
+                        return;
+                    }
+
+                    UI.warn(`${skippedItems} aliases where skipped from delete. [INVALID INDEX]`);
                     return;
                 }
 
@@ -456,6 +477,15 @@ export class ShellProfiler {
         this.args = process.argv;
         this.args.shift();
         this.args.shift();
+    }
+
+    //  TODO move to utils?
+    private isMultipleChoice(potentialIdsList: string) {
+        return potentialIdsList.split(',').length > 1 ? true : false;
+    }
+
+    private extractIdsFromSingleString(idsString: string, splittingChar = ','): string[] {
+        return idsString.split(splittingChar);
     }
 }
 

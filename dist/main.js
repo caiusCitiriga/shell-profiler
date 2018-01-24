@@ -160,9 +160,28 @@ class ShellProfiler {
             aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
             ui_service_1.UI.printKeyValuePairs(indexedIds);
             ui_service_1.UI.askUserInput('Type the number of the alias to delete: ', index => {
-                if (!aliases[index]) {
-                    ui_service_1.UI.error('You must provide a valid number');
+                if (!aliases[index] && !this.isMultipleChoice(index)) {
+                    ui_service_1.UI.error('You must provide a valid number or a comma separated list of numbers');
                     this.dispatch();
+                    return;
+                }
+                if (this.isMultipleChoice(index)) {
+                    let skippedItems = 0;
+                    this.extractIdsFromSingleString(index)
+                        .forEach(idx => {
+                        const _index = parseInt(idx);
+                        //  If the index to delete is not valid
+                        if (!aliases[_index]) {
+                            skippedItems++;
+                            return;
+                        }
+                        this.sys.deleteItem(item_type_enum_1.ItemType.alias, aliases[_index].id);
+                    });
+                    if (!skippedItems) {
+                        ui_service_1.UI.print('Deleting aliases...');
+                        return;
+                    }
+                    ui_service_1.UI.warn(`${skippedItems} aliases where skipped from delete. [INVALID INDEX]`);
                     return;
                 }
                 this.sys.deleteItem(item_type_enum_1.ItemType.alias, aliases[index].id);
@@ -383,6 +402,13 @@ class ShellProfiler {
         this.args = process.argv;
         this.args.shift();
         this.args.shift();
+    }
+    //  TODO move to utils?
+    isMultipleChoice(potentialIdsList) {
+        return potentialIdsList.split(',').length > 1 ? true : false;
+    }
+    extractIdsFromSingleString(idsString, splittingChar = ',') {
+        return idsString.split(splittingChar);
     }
 }
 exports.ShellProfiler = ShellProfiler;
