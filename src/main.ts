@@ -23,6 +23,7 @@ import { GistCreationResult } from './entities/GistCreationResult.entity';
 import { ListGistsResult } from './entities/ListGistsResult.entity';
 import { ProfilerAuth } from './entities/ProfilerAtuh.entity';
 import { CoreCommands } from './enums/core-commands.enum';
+import { ProfilerItem } from './entities/ProfilerItem.entity';
 
 export class ShellProfiler {
     private args: string[];
@@ -34,6 +35,9 @@ export class ShellProfiler {
         this.github = new GitHubService();
     }
 
+    /**
+     * Starts ShellProfiler
+     */
     public start() {
         this.cleanupArgs();
 
@@ -45,6 +49,9 @@ export class ShellProfiler {
         this.sys.help();
     }
 
+    /**
+     * Based on the input recieved, it dispatches to the right method
+     */
     private dispatch() {
         if (this.args[0] === CoreCommands.init) {
             this.handlePreInitCall();
@@ -70,6 +77,11 @@ export class ShellProfiler {
         this.sys.help();
     }
 
+    /**
+     * Checks if the user is using WINDOWS.
+     * If so, it asks if in a domain. 
+     * [Node has a problem detecting the domain user folder name]
+     */
     private handlePreInitCall() {
         if (this.sys.isWindows) {
             UI.askUserInput(chalk.yellow('WINDOWS DETECTED: Are you part of a Domain? Y/N '), answer => {
@@ -93,6 +105,9 @@ export class ShellProfiler {
         }
     }
 
+    /**
+     * Checks that all the files and gists SP needs are OK
+     */
     private handleStatCall() {
         if (this.sys.checkProfilerDataIntegrity()) {
             UI.success('ShellProfiler is happy! :)');
@@ -102,6 +117,10 @@ export class ShellProfiler {
         UI.error('There are issues with your configuration. Run the init script to make ShellProfiler happy again');
     }
 
+    /**
+     * Lists elements.
+     * Given a flag, it lists all the elements of that kind
+     */
     private handleLsCall() {
         if (!this.checkExtraOptionsPresence([1])) {
             return;
@@ -129,6 +148,11 @@ export class ShellProfiler {
         }
     }
 
+    /**
+     * Creates a new element
+     * Given a flag, it creates an element of that type.
+     * The name, description and body are required and common for all type of elements
+     */
     private handleSetCall() {
         if (!this.checkExtraOptionsPresence([1])) {
             return;
@@ -165,6 +189,12 @@ export class ShellProfiler {
         }
     }
 
+    /**
+     * Deletes an element
+     * Given a flag it lists all the elements of that type.
+     * Given a index number, it deletes that element.
+     * Given a string of indexes numbers comma separated it deletes multiple elements.
+     */
     private handleDelCall() {
         if (!this.checkExtraOptionsPresence([1])) {
             return;
@@ -182,70 +212,79 @@ export class ShellProfiler {
             return;
         }
 
-        if (extractionResult.option.indexOf('--alias') !== -1 || extractionResult.option.indexOf('--a') !== -1) {
-            const aliases = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData)).aliases;
-            const indexedIds: { key: string, value: string }[] = [];
+        [
+            {
+                type: ItemType.alias,
+                options: [acceptedOptions[0], acceptedOptions[1]]
+            },
+            {
+                type: ItemType.function,
+                options: [acceptedOptions[2], acceptedOptions[3]]
+            }
+        ].forEach(it => this.listElementsAndAskForElementToDelete(extractionResult, it.type, it.options));
+    }
 
-            if (!aliases.length) {
-                UI.warn('No aliases available.');
+    private listElementsAndAskForElementToDelete(extractionResult: DispatcherReturnSet, type: ItemType, acceptedOptions: { option: string }[]) {
+        if (!this.tryToMatchAOption(extractionResult, acceptedOptions)) {
+            return;
+        }
+
+        let persistedItems: ProfilerItem[] = [];
+        const indexedIds: { key: string, value: string }[] = [];
+        if (type === ItemType.alias) {
+            persistedItems = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData)).aliases;
+        }
+        if (type === ItemType.function) {
+            persistedItems = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData)).functions;
+        }
+
+        const keywords = this.generateKeywordsBasedOnType(type);
+        if (!persistedItems.length) {
+            UI.warn(`No ${keywords.plural} available.`);
+            return;
+        }
+
+        persistedItems.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
+        UI.printKeyValuePairs(indexedIds);
+        UI.askUserInput(`Type the number of the ${keywords.singular} to delete: `, index => {
+            if (!persistedItems[index] && !this.isMultipleChoice(index)) {
+                UI.error('You must provide a valid number or a comma separated list of numbers');
+                this.dispatch();
                 return;
             }
+            this.deleteItems(index, persistedItems, ItemType.alias);
+        });
 
-            aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
-            UI.printKeyValuePairs(indexedIds);
-            UI.askUserInput('Type the number of the alias to delete: ', index => {
-                if (!aliases[index] && !this.isMultipleChoice(index)) {
-                    UI.error('You must provide a valid number or a comma separated list of numbers');
-                    this.dispatch();
-                    return;
-                }
-                if (this.isMultipleChoice(index)) {
-                    let skippedItems = 0;
-                    this.extractIdsFromSingleString(index)
-                        .forEach(idx => {
-                            const _index = parseInt(idx);
-                            //  If the index to delete is not valid
-                            if (!aliases[_index]) {
-                                skippedItems++
-                                return;
-                            }
+    }
 
-                            this.sys.deleteItem(ItemType.alias, aliases[_index].id);
-                        });
-                    if (!skippedItems) {
-                        UI.print('Deleting aliases...');
+    private tryToMatchAOption(extractionResult: DispatcherReturnSet, availableOptions: { option: string }[]): boolean {
+        return availableOptions.find(ao => extractionResult.option.lastIndexOf(ao.option) !== -1) ? true : false;
+    }
+
+    private deleteItems(index: string, items: ProfilerItem[], type: ItemType) {
+        if (this.isMultipleChoice(index)) {
+            let skippedItems = 0;
+            this.extractIdsFromSingleString(index)
+                .forEach(idx => {
+                    const _index = parseInt(idx);
+                    //  If the index to delete is not valid
+                    if (!items[_index]) {
+                        skippedItems++
                         return;
                     }
 
-                    UI.warn(`${skippedItems} aliases where skipped from delete. [INVALID INDEX]`);
-                    return;
-                }
-
-                this.sys.deleteItem(ItemType.alias, aliases[index].id);
-            });
-        }
-
-        if (extractionResult.option.indexOf('--func') !== -1 || extractionResult.option.indexOf('--f') !== -1) {
-            const functions = (<ProfilerData>PersistanceService.getItem(PersistanceItemType.profilerData)).functions;
-            const indexedIds: { key: string, value: string }[] = [];
-
-            if (!functions.length) {
-                UI.warn('No functions available.');
+                    this.sys.deleteItem(ItemType.alias, items[_index].id);
+                });
+            if (!skippedItems) {
+                UI.print('Deleting elements...');
                 return;
             }
 
-            functions.forEach((f, i) => indexedIds.push({ key: `${i}) ${f.name}`, value: f.desc }));
-            UI.printKeyValuePairs(indexedIds);
-            UI.askUserInput('Type the number of the function to delete: ', index => {
-                if (!functions[index]) {
-                    UI.error('You must provide a valid number');
-                    this.dispatch();
-                    return;
-                }
-
-                this.sys.deleteItem(ItemType.function, functions[index].id);
-            });
+            UI.warn(`${skippedItems} elements where skipped from delete. [INVALID INDEX]`);
+            return;
         }
+
+        this.sys.deleteItem(ItemType.alias, items[parseInt(index)].id);
     }
 
     private handleRealInitCall(domainUserFolderName?: string) {
@@ -480,12 +519,27 @@ export class ShellProfiler {
     }
 
     //  TODO move to utils?
-    private isMultipleChoice(potentialIdsList: string) {
+    private isMultipleChoice(potentialIdsList: string): boolean {
         return potentialIdsList.split(',').length > 1 ? true : false;
     }
 
     private extractIdsFromSingleString(idsString: string, splittingChar = ','): string[] {
         return idsString.split(splittingChar);
+    }
+
+    private generateKeywordsBasedOnType(type: ItemType): { singular: string; plural: string } {
+        let keyword: string;
+        let keywordPlural: string;
+
+        if (type === ItemType.alias) {
+            keyword = 'alias';
+            keywordPlural = 'aliases';
+        } else {
+            keyword = 'function';
+            keywordPlural = 'functions';
+        }
+
+        return { singular: keyword, plural: keywordPlural };
     }
 }
 

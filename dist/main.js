@@ -19,6 +19,9 @@ class ShellProfiler {
         this.sys = new system_service_1.SystemService();
         this.github = new github_service_1.GitHubService();
     }
+    /**
+     * Starts ShellProfiler
+     */
     start() {
         this.cleanupArgs();
         if (this.args.length) {
@@ -27,6 +30,9 @@ class ShellProfiler {
         }
         this.sys.help();
     }
+    /**
+     * Based on the input recieved, it dispatches to the right method
+     */
     dispatch() {
         if (this.args[0] === core_commands_enum_1.CoreCommands.init) {
             this.handlePreInitCall();
@@ -50,6 +56,11 @@ class ShellProfiler {
         }
         this.sys.help();
     }
+    /**
+     * Checks if the user is using WINDOWS.
+     * If so, it asks if in a domain.
+     * [Node has a problem detecting the domain user folder name]
+     */
     handlePreInitCall() {
         if (this.sys.isWindows) {
             ui_service_1.UI.askUserInput(chalk.yellow('WINDOWS DETECTED: Are you part of a Domain? Y/N '), answer => {
@@ -71,6 +82,9 @@ class ShellProfiler {
             this.handleRealInitCall();
         }
     }
+    /**
+     * Checks that all the files and gists SP needs are OK
+     */
     handleStatCall() {
         if (this.sys.checkProfilerDataIntegrity()) {
             ui_service_1.UI.success('ShellProfiler is happy! :)');
@@ -78,6 +92,10 @@ class ShellProfiler {
         }
         ui_service_1.UI.error('There are issues with your configuration. Run the init script to make ShellProfiler happy again');
     }
+    /**
+     * Lists elements.
+     * Given a flag, it lists all the elements of that kind
+     */
     handleLsCall() {
         if (!this.checkExtraOptionsPresence([1])) {
             return;
@@ -103,6 +121,11 @@ class ShellProfiler {
             this.handleGetProfileNameCall();
         }
     }
+    /**
+     * Creates a new element
+     * Given a flag, it creates an element of that type.
+     * The name, description and body are required and common for all type of elements
+     */
     handleSetCall() {
         if (!this.checkExtraOptionsPresence([1])) {
             return;
@@ -136,6 +159,12 @@ class ShellProfiler {
             this.handleUsernameSetCall(extractionResult.value);
         }
     }
+    /**
+     * Deletes an element
+     * Given a flag it lists all the elements of that type.
+     * Given a index number, it deletes that element.
+     * Given a string of indexes numbers comma separated it deletes multiple elements.
+     */
     handleDelCall() {
         if (!this.checkExtraOptionsPresence([1])) {
             return;
@@ -150,61 +179,69 @@ class ShellProfiler {
         if (!extractionResult) {
             return;
         }
-        if (extractionResult.option.indexOf('--alias') !== -1 || extractionResult.option.indexOf('--a') !== -1) {
-            const aliases = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).aliases;
-            const indexedIds = [];
-            if (!aliases.length) {
-                ui_service_1.UI.warn('No aliases available.');
+        [
+            {
+                type: item_type_enum_1.ItemType.alias,
+                options: [acceptedOptions[0], acceptedOptions[1]]
+            },
+            {
+                type: item_type_enum_1.ItemType.function,
+                options: [acceptedOptions[2], acceptedOptions[3]]
+            }
+        ].forEach(it => this.listElementsAndAskForElementToDelete(extractionResult, it.type, it.options));
+    }
+    listElementsAndAskForElementToDelete(extractionResult, type, acceptedOptions) {
+        if (!this.tryToMatchAOption(extractionResult, acceptedOptions)) {
+            return;
+        }
+        let persistedItems = [];
+        const indexedIds = [];
+        if (type === item_type_enum_1.ItemType.alias) {
+            persistedItems = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).aliases;
+        }
+        if (type === item_type_enum_1.ItemType.function) {
+            persistedItems = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).functions;
+        }
+        const keywords = this.generateKeywordsBasedOnType(type);
+        if (!persistedItems.length) {
+            ui_service_1.UI.warn(`No ${keywords.plural} available.`);
+            return;
+        }
+        persistedItems.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
+        ui_service_1.UI.printKeyValuePairs(indexedIds);
+        ui_service_1.UI.askUserInput(`Type the number of the ${keywords.singular} to delete: `, index => {
+            if (!persistedItems[index] && !this.isMultipleChoice(index)) {
+                ui_service_1.UI.error('You must provide a valid number or a comma separated list of numbers');
+                this.dispatch();
                 return;
             }
-            aliases.forEach((a, i) => indexedIds.push({ key: `${i}) ${a.name}`, value: a.desc }));
-            ui_service_1.UI.printKeyValuePairs(indexedIds);
-            ui_service_1.UI.askUserInput('Type the number of the alias to delete: ', index => {
-                if (!aliases[index] && !this.isMultipleChoice(index)) {
-                    ui_service_1.UI.error('You must provide a valid number or a comma separated list of numbers');
-                    this.dispatch();
+            this.deleteItems(index, persistedItems, item_type_enum_1.ItemType.alias);
+        });
+    }
+    tryToMatchAOption(extractionResult, availableOptions) {
+        return availableOptions.find(ao => extractionResult.option.lastIndexOf(ao.option) !== -1) ? true : false;
+    }
+    deleteItems(index, items, type) {
+        if (this.isMultipleChoice(index)) {
+            let skippedItems = 0;
+            this.extractIdsFromSingleString(index)
+                .forEach(idx => {
+                const _index = parseInt(idx);
+                //  If the index to delete is not valid
+                if (!items[_index]) {
+                    skippedItems++;
                     return;
                 }
-                if (this.isMultipleChoice(index)) {
-                    let skippedItems = 0;
-                    this.extractIdsFromSingleString(index)
-                        .forEach(idx => {
-                        const _index = parseInt(idx);
-                        //  If the index to delete is not valid
-                        if (!aliases[_index]) {
-                            skippedItems++;
-                            return;
-                        }
-                        this.sys.deleteItem(item_type_enum_1.ItemType.alias, aliases[_index].id);
-                    });
-                    if (!skippedItems) {
-                        ui_service_1.UI.print('Deleting aliases...');
-                        return;
-                    }
-                    ui_service_1.UI.warn(`${skippedItems} aliases where skipped from delete. [INVALID INDEX]`);
-                    return;
-                }
-                this.sys.deleteItem(item_type_enum_1.ItemType.alias, aliases[index].id);
+                this.sys.deleteItem(item_type_enum_1.ItemType.alias, items[_index].id);
             });
-        }
-        if (extractionResult.option.indexOf('--func') !== -1 || extractionResult.option.indexOf('--f') !== -1) {
-            const functions = persisance_service_1.PersistanceService.getItem(persistance_item_type_enum_1.PersistanceItemType.profilerData).functions;
-            const indexedIds = [];
-            if (!functions.length) {
-                ui_service_1.UI.warn('No functions available.');
+            if (!skippedItems) {
+                ui_service_1.UI.print('Deleting elements...');
                 return;
             }
-            functions.forEach((f, i) => indexedIds.push({ key: `${i}) ${f.name}`, value: f.desc }));
-            ui_service_1.UI.printKeyValuePairs(indexedIds);
-            ui_service_1.UI.askUserInput('Type the number of the function to delete: ', index => {
-                if (!functions[index]) {
-                    ui_service_1.UI.error('You must provide a valid number');
-                    this.dispatch();
-                    return;
-                }
-                this.sys.deleteItem(item_type_enum_1.ItemType.function, functions[index].id);
-            });
+            ui_service_1.UI.warn(`${skippedItems} elements where skipped from delete. [INVALID INDEX]`);
+            return;
         }
+        this.sys.deleteItem(item_type_enum_1.ItemType.alias, items[parseInt(index)].id);
     }
     handleRealInitCall(domainUserFolderName) {
         ui_service_1.UI.askUserInput(chalk.green('GitHub authorization token: '), token => {
@@ -409,6 +446,19 @@ class ShellProfiler {
     }
     extractIdsFromSingleString(idsString, splittingChar = ',') {
         return idsString.split(splittingChar);
+    }
+    generateKeywordsBasedOnType(type) {
+        let keyword;
+        let keywordPlural;
+        if (type === item_type_enum_1.ItemType.alias) {
+            keyword = 'alias';
+            keywordPlural = 'aliases';
+        }
+        else {
+            keyword = 'function';
+            keywordPlural = 'functions';
+        }
+        return { singular: keyword, plural: keywordPlural };
     }
 }
 exports.ShellProfiler = ShellProfiler;
